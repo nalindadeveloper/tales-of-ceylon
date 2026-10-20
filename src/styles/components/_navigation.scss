@@ -1,0 +1,231 @@
+@use '../abstracts' as *;
+
+// ---- Primary navigation ----------------------------------------------------
+.site-nav {
+  display: none;
+
+  @include from(md) {
+    display: block;
+  }
+}
+
+.site-nav__list {
+  @extend %reset-list;
+  display: flex;
+  gap: space(10);
+}
+
+.site-nav__link {
+  position: relative;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.35rem;
+    height: 1px;
+    background: var(--color-gold-300);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform $duration-base $ease-out;
+  }
+
+  @include hover {
+    &::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+}
+
+// ---- Mobile menu -------------------------------------------------------------
+.menu-toggle {
+  @extend %reset-button;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: 50%;
+
+  @include from(md) {
+    display: none;
+  }
+
+  &[aria-expanded='true'] .menu-toggle__line {
+    &:first-child {
+      transform: translateY(3.5px) rotate(45deg);
+    }
+
+    &:last-child {
+      transform: translateY(-3.5px) rotate(-45deg);
+    }
+  }
+}
+
+.menu-toggle__line {
+  display: block;
+  width: 1.1rem;
+  height: 1px;
+  background: currentColor;
+  transition: transform $duration-base $ease-out;
+}
+
+.mobile-menu {
+  padding: space(6) var(--gutter) space(10);
+  border-top: 1px solid var(--color-hairline);
+
+  @include from(md) {
+    display: none !important;
+  }
+}
+
+.mobile-menu__list {
+  @extend %reset-list;
+  display: grid;
+  gap: space(4);
+}
+
+.mobile-menu__link {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  text-decoration: none;
+}
+
+// ---- Destination navigation (island section) ---------------------------------
+.destination-nav {
+  position: absolute;
+  top: calc(var(--header-height) + #{space(2)});
+  left: 0;
+  right: 0;
+  display: flex;
+  padding-inline: var(--gutter);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  @include from(md) {
+    top: 50%;
+    right: auto;
+    left: var(--gutter);
+    padding: 0;
+    overflow: visible;
+    transform: translateY(-50%);
+  }
+
+  // The intro panel uses this space in the overview on desktop.
+  [data-active-destination='overview'] & {
+    @include from(md) {
+      top: 38%;
+    }
+  }
+}
+
+.destination-nav__list {
+  @extend %reset-list;
+  display: flex;
+  gap: space(2);
+
+  @include from(md) {
+    flex-direction: column;
+    gap: space(1);
+    padding-left: space(5);
+  }
+}
+
+.destination-nav__button {
+  @extend %reset-button;
+  display: inline-flex;
+  align-items: baseline;
+  gap: space(2);
+  min-height: 2.5rem;
+  padding: space(2) space(3);
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: rgb(13 35 56 / 0.55);
+  backdrop-filter: blur(6px);
+  color: rgb(248 244 236 / 0.75);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color $duration-base $ease-out, background-color $duration-base $ease-out, border-color $duration-base $ease-out;
+
+  @include from(md) {
+    min-height: 2.25rem;
+    padding: space(1) 0;
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+    font-size: 0.8rem;
+  }
+
+  @include hover {
+    color: var(--color-ivory-50);
+  }
+
+  &.is-active {
+    border-color: transparent;
+    background: var(--color-gold-300);
+    color: var(--color-charcoal-900);
+
+    @include from(md) {
+      background: none;
+      color: var(--color-gold-300);
+    }
+  }
+}
+
+.destination-nav__index {
+  font-size: 0.62rem;
+  opacity: 0.7;
+}
+
+.destination-nav__name {
+  @include from(md) {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: transform $duration-base $ease-out;
+
+    .is-active & {
+      transform: translateX(0.35rem);
+    }
+  }
+}
+
+.destination-nav__progress {
+  display: none;
+
+  @include from(md) {
+    position: absolute;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    left: 0;
+    display: block;
+    width: 1px;
+    background: var(--color-hairline);
+  }
+}
+
+.destination-nav__progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--color-gold-300);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.8s $ease-out;
+}
+
+.is-fallback .destination-nav {
+  position: static;
+  transform: none;
+  padding: 0;
+}

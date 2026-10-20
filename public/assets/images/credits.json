@@ -1,0 +1,65 @@
+{
+  "destinations/colombo.webp": {
+    "title": "Skyline of colombo beira lake.jpg",
+    "author": "Kapila Perera",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Skyline_of_colombo_beira_lake.jpg"
+  },
+  "destinations/kandy.webp": {
+    "title": "Kandy Lake and the Temple of the Sacred Tooth Relic, Kandy.jpg",
+    "author": "Niranjan Ramamurthy",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic,_Kandy.jpg"
+  },
+  "destinations/jaffna.webp": {
+    "title": "Nallur Kandaswamy temple.jpg",
+    "author": "Lucas105",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nallur_Kandaswamy_temple.jpg"
+  },
+  "destinations/nuwara-eliya.webp": {
+    "title": "Tea-plantation Nuwara Eliya-2567.jpg",
+    "author": "Bergentroll",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Tea-plantation_Nuwara_Eliya-2567.jpg"
+  },
+  "destinations/galle.webp": {
+    "title": "GALLE FORT AND LIGHTHOUSE GALLE SRI LANKA JAN2013 (8510167078).jpg",
+    "author": "calflier001",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:GALLE_FORT_AND_LIGHTHOUSE_GALLE_SRI_LANKA_JAN2013_(8510167078).jpg"
+  },
+  "editorial/culture.webp": {
+    "title": "Kandyan Dance Kandy Sri Lanka 1.jpg",
+    "author": "Philip Nalangan",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kandyan_Dance_Kandy_Sri_Lanka_1.jpg"
+  },
+  "editorial/heritage.webp": {
+    "title": "Gal Vihara Polonnaruwa 1.jpg",
+    "author": "Philip Nalangan",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gal_Vihara_Polonnaruwa_1.jpg"
+  },
+  "editorial/highlands.webp": {
+    "title": "SL Demodara near Ella asv2020-01 img02.jpg",
+    "author": "A.Savin",
+    "license": "FAL",
+    "licenseUrl": "http://artlibre.org/licence/lal/en",
+    "source": "https://commons.wikimedia.org/wiki/File:SL_Demodara_near_Ella_asv2020-01_img02.jpg"
+  },
+  "editorial/landscapes.webp": {
+    "title": "Mirissa beach Sri Lanka (29959458812).jpg",
+    "author": "dronepicr",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mirissa_beach_Sri_Lanka_(29959458812).jpg"
+  }
+}

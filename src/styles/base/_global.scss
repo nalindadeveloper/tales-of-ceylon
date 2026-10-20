@@ -1,0 +1,86 @@
+@use '../abstracts' as *;
+
+:root {
+  --color-ocean-950: #{$color-ocean-950};
+  --color-ocean-900: #{$color-ocean-900};
+  --color-ocean-800: #{$color-ocean-800};
+  --color-ocean-600: #{$color-ocean-600};
+  --color-forest-700: #{$color-forest-700};
+  --color-forest-500: #{$color-forest-500};
+  --color-ivory-50: #{$color-ivory-50};
+  --color-ivory-100: #{$color-ivory-100};
+  --color-ivory-300: #{$color-ivory-300};
+  --color-charcoal-900: #{$color-charcoal-900};
+  --color-charcoal-700: #{$color-charcoal-700};
+  --color-charcoal-500: #{$color-charcoal-500};
+  --color-gold-500: #{$color-gold-500};
+  --color-gold-300: #{$color-gold-300};
+  --color-hairline: rgb(248 244 236 / 0.18);
+  --color-hairline-dark: rgb(23 25 27 / 0.14);
+
+  --font-display: #{$font-display};
+  --font-sans: #{$font-sans};
+
+  --gutter: #{$gutter};
+  --header-height: #{$header-height};
+  --ease-out: #{$ease-out};
+  --ease-in-out: #{$ease-in-out};
+
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-ocean-900);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-ocean-900);
+  color: var(--color-ivory-50);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+
+  // Subtle film grain over the whole page.
+  &::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: $z-grain;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+}
+
+// While loading, the page beneath stays still.
+html.js:not(.is-loaded) body {
+  overflow: hidden;
+}
+
+main {
+  position: relative;
+  z-index: $z-content;
+  // Transparent wrappers let clicks through to the WebGL canvas behind them;
+  // real content re-enables pointer events (see hero, island stage, editorial).
+  pointer-events: none;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--color-gold-500);
+  color: var(--color-charcoal-900);
+}
+
+.noscript-message {
+  @extend %container;
+  padding-block: space(6);
+  color: var(--color-ivory-50);
+}

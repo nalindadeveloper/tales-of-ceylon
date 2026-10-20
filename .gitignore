@@ -1,0 +1,6 @@
+node_modules
+dist
+.geo-cache
+*.log
+.asset-cache
+.claude

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-20T19:10:51.464Z",
+  "units": "Horizontal positions in km (scene units); heights in metres.",
+  "projection": {
+    "type": "local-equirectangular",
+    "origin": {
+      "lat": 7.85,
+      "lon": 80.7
+    },
+    "module": "src/geography/projection.js"
+  },
+  "bakeExaggeration": 4.5,
+  "maxElevationM": 2456,
+  "mesh": {
+    "file": "terrain-mesh.bin",
+    "bounds": {
+      "minX": -117.56709797299644,
+      "minZ": -222.81007837694727,
+      "maxX": 132.02675933878123,
+      "maxZ": 216.71547602934737
+    },
+    "vertexCount": 50846,
+    "indexCount": 300312,
+    "indexType": "uint16",
+    "positionsOffset": 0,
+    "heightsOffset": 203384,
+    "indicesOffset": 305076,
+    "byteLength": 905700,
+    "positionEncoding": "uint16 normalised over bounds",
+    "heightEncoding": "uint16 metres"
+  },
+  "textures": {
+    "bounds": {
+      "minX": -117.56709797299644,
+      "minZ": -222.81007837694727,
+      "maxX": 132.02675933878123,
+      "maxZ": 216.71547602934737
+    },
+    "width": 1163,
+    "height": 2048,
+    "metresPerPixel": 215,
+    "albedo": "terrain-albedo.webp",
+    "normal": "terrain-normal.webp",
+    "normalSpace": "object (x east, y up, z south)"
+  },
+  "ocean": {
+    "texture": "ocean.webp",
+    "bounds": {
+      "minX": -363.50514541380056,
+      "minZ": -394.7425348290419,
+      "maxX": 363.9945816460158,
+      "maxZ": 405.86204285239506
+    }
+  },
+  "sources": [
+    {
+      "role": "coastline",
+      "name": "geoBoundaries gbOpen LKA ADM0",
+      "url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/LKA/ADM0/geoBoundaries-LKA-ADM0.geojson",
+      "attribution": "geoBoundaries (Runfola et al. 2020), data © OpenStreetMap contributors, ODbL 1.0",
+      "license": "ODbL-1.0"
+    },
+    {
+      "role": "elevation + bathymetry",
+      "name": "AWS Terrain Tiles (Terrarium)",
+      "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+      "attribution": "Terrain Tiles (AWS Open Data / Mapzen): SRTM (NASA, public domain), ETOPO1 (NOAA), GMTED2010 (USGS)",
+      "landZoom": 10,
+      "oceanZoom": 8
+    }
+  ],
+  "notes": [
+    "Colours are art-directed from elevation, slope, coastal distance and an approximate wet/dry climate zoning; they are not land-cover data.",
+    "Rivers are derived from the DEM by flow accumulation (upstream area ≥ 320 km²)."
+  ]
+}

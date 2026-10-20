@@ -1,0 +1,22 @@
+@use 'sass:map';
+@use 'sass:math';
+@use 'variables' as *;
+
+/// Spacing scale: space(4) → 1rem.
+@function space($steps) {
+  @return $space-unit * $steps;
+}
+
+/// Fluid size (rem) that grows linearly from a 375px to a 1440px viewport.
+/// 23.4375rem = 375px; 66.5625rem = 1065px (the interpolation range).
+@function fluid($min, $max) {
+  $range: math.div($max - $min, 1rem);
+  @return clamp(#{$min}, calc(#{$min} + #{$range} * ((100vw - 23.4375rem) / 66.5625)), #{$max});
+}
+
+@function breakpoint($name) {
+  @if not map.has-key($breakpoints, $name) {
+    @error 'Unknown breakpoint `#{$name}`.';
+  }
+  @return map.get($breakpoints, $name);
+}

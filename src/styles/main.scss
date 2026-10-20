@@ -1,0 +1,23 @@
+// Island Journal — style entry point.
+// Order: base → layout → components → utilities (utilities win ties).
+
+@use 'base/reset';
+@use 'base/global';
+@use 'base/typography';
+@use 'base/accessibility';
+
+@use 'layout/header';
+@use 'layout/hero';
+@use 'layout/island-experience';
+@use 'layout/destination-card';
+@use 'layout/editorial';
+@use 'layout/footer';
+
+@use 'components/buttons';
+@use 'components/markers';
+@use 'components/loading-screen';
+@use 'components/sound-toggle';
+@use 'components/navigation';
+
+@use 'utilities/animations';
+@use 'utilities/utilities';

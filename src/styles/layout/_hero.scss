@@ -1,0 +1,117 @@
+@use '../abstracts' as *;
+
+.hero {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: calc(var(--header-height) + #{space(8)}) var(--gutter) space(24);
+  pointer-events: none; // let the canvas behind receive pointer events
+
+  // Legibility gradient over the canvas, strongest behind the copy.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgb(13 35 56 / 0.25) 0%, transparent 30%, transparent 70%, rgb(13 35 56 / 0.55) 100%),
+      linear-gradient(90deg, rgb(13 35 56 / 0.82) 0%, rgb(13 35 56 / 0.45) 45%, transparent 75%);
+
+    @include until(md) {
+      background: linear-gradient(180deg, rgb(13 35 56 / 0.8) 0%, rgb(13 35 56 / 0.5) 45%, transparent 75%);
+    }
+  }
+
+  a,
+  button,
+  p,
+  h1 {
+    pointer-events: auto; // links and selectable text
+  }
+
+  @include until(md) {
+    align-items: start;
+  }
+}
+
+.hero__content {
+  max-width: 38rem;
+}
+
+.hero__eyebrow {
+  margin-bottom: space(6);
+}
+
+.hero__title {
+  @include display-type(fluid(3.1rem, 6.6rem));
+  margin-bottom: space(6);
+
+  em {
+    color: var(--color-gold-300);
+  }
+}
+
+.hero__text {
+  max-width: 30rem;
+  margin-bottom: space(10);
+  color: rgb(248 244 236 / 0.82);
+  font-size: fluid(1rem, 1.15rem);
+}
+
+.hero__meta {
+  position: absolute;
+  right: var(--gutter);
+  bottom: space(10);
+  display: none;
+  align-items: center;
+  gap: space(3);
+  @include eyebrow;
+  color: rgb(248 244 236 / 0.6);
+  font-size: 0.66rem;
+
+  @include from(md) {
+    display: flex;
+  }
+}
+
+.hero__meta-rule {
+  width: 3rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.scroll-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: space(8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(3);
+  color: rgb(248 244 236 / 0.75);
+  text-decoration: none;
+  transform: translateX(-50%);
+}
+
+.scroll-indicator__label {
+  @include eyebrow;
+  font-size: 0.62rem;
+}
+
+.scroll-indicator__line {
+  position: relative;
+  width: 1px;
+  height: 3.5rem;
+  overflow: hidden;
+  background: rgb(248 244 236 / 0.2);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-gold-300);
+    animation: scroll-line 2.4s $ease-in-out infinite;
+  }
+}

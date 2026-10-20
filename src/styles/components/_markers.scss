@@ -1,0 +1,51 @@
+@use '../abstracts' as *;
+
+// DOM labels projected onto the 3D markers (positioned with `transform` by JS;
+// the offset uses the independent `translate` property).
+.map-label {
+  @extend %reset-button;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: space(2);
+  padding: space(1) space(3);
+  translate: -50% calc(-100% - 0.9rem);
+  border: 1px solid rgb(248 244 236 / 0.22);
+  border-radius: 999px;
+  background: rgb(13 35 56 / 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--color-ivory-50);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  pointer-events: auto;
+  will-change: transform;
+  transition:
+    background-color $duration-base $ease-out,
+    color $duration-base $ease-out,
+    opacity $duration-base $ease-out,
+    border-color $duration-base $ease-out;
+
+  &.is-active {
+    border-color: transparent;
+    background: var(--color-gold-300);
+    color: var(--color-charcoal-900);
+  }
+
+  &.is-hovered:not(.is-active) {
+    border-color: var(--color-gold-300);
+  }
+
+  &.is-offscreen {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.map-label__index {
+  opacity: 0.6;
+  font-size: 0.6rem;
+}

@@ -1,0 +1,95 @@
+@use '../abstracts' as *;
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: $z-loading;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(60% 50% at 50% 45%, rgb(31 79 116 / 0.55), transparent 70%),
+    var(--color-ocean-900);
+  color: var(--color-ivory-50);
+  clip-path: inset(0 0 0 0);
+
+  .no-js & {
+    display: none;
+  }
+}
+
+.loading-screen__inner {
+  display: grid;
+  justify-items: center;
+  gap: space(5);
+  text-align: center;
+}
+
+.loading-screen__brand {
+  @include eyebrow;
+  font-size: 0.78rem;
+  letter-spacing: 0.34em;
+
+  span {
+    color: var(--color-gold-500);
+  }
+}
+
+.loading-screen__outline {
+  width: auto;
+  height: min(36vh, 20rem);
+  margin-block: space(4);
+  overflow: visible;
+}
+
+.loading-screen__ghost {
+  fill: rgb(248 244 236 / 0.03);
+  stroke: rgb(248 244 236 / 0.16);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  animation: contour-breathe 3.2s $ease-in-out infinite;
+}
+
+.loading-screen__trace {
+  fill: none;
+  stroke: var(--color-gold-300);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: stroke-dashoffset 0.6s $ease-out;
+}
+
+.loading-screen__title {
+  @include eyebrow;
+  font-size: 0.7rem;
+  color: rgb(248 244 236 / 0.85);
+}
+
+.loading-screen__progress {
+  width: 12rem;
+  height: 1px;
+  overflow: hidden;
+  background: rgb(248 244 236 / 0.16);
+}
+
+.loading-screen__bar {
+  display: block;
+  height: 100%;
+  background: var(--color-gold-300);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s $ease-out;
+}
+
+.loading-screen__stage {
+  min-height: 1.5em;
+  color: rgb(248 244 236 / 0.55);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+}
+
+.loading-screen.is-error .loading-screen__stage {
+  color: var(--color-gold-300);
+}

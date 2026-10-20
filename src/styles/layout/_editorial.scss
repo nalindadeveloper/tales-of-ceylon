@@ -1,0 +1,128 @@
+@use '../abstracts' as *;
+
+.editorial {
+  position: relative;
+  z-index: $z-editorial;
+  padding-block: space(24) space(28);
+  background: var(--color-ivory-50);
+  color: var(--color-charcoal-900);
+  pointer-events: auto;
+
+  .eyebrow {
+    color: var(--color-forest-700);
+  }
+}
+
+.editorial__inner {
+  @extend %container;
+}
+
+.editorial__header {
+  display: grid;
+  gap: space(6);
+  margin-bottom: space(16);
+
+  @include from(md) {
+    grid-template-columns: 1fr 1fr;
+    column-gap: space(16);
+    align-items: end;
+
+    .eyebrow {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.editorial__title {
+  @include display-type(fluid(2.6rem, 5.4rem));
+
+  em {
+    color: var(--color-forest-700);
+  }
+}
+
+.editorial__lede {
+  max-width: 34rem;
+  color: var(--color-charcoal-700);
+  font-size: fluid(1rem, 1.12rem);
+  line-height: 1.75;
+}
+
+.editorial__feature {
+  margin-bottom: space(20);
+}
+
+.editorial__feature-media {
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: $radius-md;
+  background: var(--color-ivory-300);
+
+  img {
+    @include cover-media;
+  }
+
+  @include from(md) {
+    aspect-ratio: 16 / 8;
+  }
+}
+
+.editorial__caption {
+  @extend %hairline-top;
+  margin-top: space(4);
+  padding-top: space(3);
+  border-color: var(--color-hairline-dark);
+  color: var(--color-charcoal-500);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.editorial__grid {
+  display: grid;
+  gap: space(14);
+
+  @include from(md) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: space(8);
+  }
+}
+
+.story-block__media {
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  margin-bottom: space(6);
+  border-radius: $radius-md;
+  background: var(--color-ivory-300);
+
+  img {
+    @include cover-media;
+    transition: transform 1.2s $ease-out;
+  }
+}
+
+.story-block {
+  @include hover {
+    .story-block__media img {
+      transform: scale(1.04);
+    }
+  }
+}
+
+.story-block__index {
+  margin-bottom: space(2);
+  color: var(--color-gold-500);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.story-block__title {
+  @include display-type(fluid(1.9rem, 2.4rem));
+  margin-bottom: space(3);
+}
+
+.story-block__text {
+  max-width: 24rem;
+  color: var(--color-charcoal-700);
+  font-size: 0.95rem;
+}

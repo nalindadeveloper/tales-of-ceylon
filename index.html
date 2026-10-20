@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Island Journal — Discover the soul of Sri Lanka</title>
+    <meta
+      name="description"
+      content="Explore Sri Lanka as a miniature 3D landscape built from real elevation data — Colombo, Kandy, Jaffna, Nuwara Eliya and Galle."
+    />
+    <meta name="theme-color" content="#0d2338" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      document.documentElement.classList.replace('no-js', 'js');
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- Loading screen: visible immediately, removed once essential terrain assets are ready. -->
+    <div class="loading-screen" id="loading-screen" role="status" aria-live="polite" aria-label="Preparing your journey">
+      <div class="loading-screen__inner">
+        <p class="loading-screen__brand">Island <span aria-hidden="true">/</span> Journal</p>
+        <svg class="loading-screen__outline" id="loading-outline" aria-hidden="true" focusable="false"></svg>
+        <p class="loading-screen__title">Preparing your journey</p>
+        <div class="loading-screen__progress" aria-hidden="true">
+          <span class="loading-screen__bar" id="loading-bar"></span>
+        </div>
+        <p class="loading-screen__stage" id="loading-stage">Charting the coastline</p>
+      </div>
+    </div>
+
+    <header class="site-header" id="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__logo" href="#top" aria-label="Island Journal — back to top">
+          Island <span class="site-header__slash" aria-hidden="true">/</span> Journal
+        </a>
+
+        <nav class="site-nav" id="site-nav" aria-label="Primary">
+          <ul class="site-nav__list">
+            <li><a class="site-nav__link" href="#top">Discover</a></li>
+            <li><a class="site-nav__link" href="#island">Destinations</a></li>
+            <li><a class="site-nav__link" href="#about">About</a></li>
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false" aria-label="Turn ambient sound on">
+            <span class="sound-toggle__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="sound-toggle__label">Sound <span class="sound-toggle__state">Off</span></span>
+          </button>
+          <button
+            class="menu-toggle"
+            id="menu-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+            aria-label="Open menu"
+          >
+            <span class="menu-toggle__line" aria-hidden="true"></span>
+            <span class="menu-toggle__line" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mobile-menu" id="mobile-menu" hidden>
+        <nav aria-label="Mobile">
+          <ul class="mobile-menu__list">
+            <li><a class="mobile-menu__link" href="#top">Discover</a></li>
+            <li><a class="mobile-menu__link" href="#island">Destinations</a></li>
+            <li><a class="mobile-menu__link" href="#about">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Fixed WebGL layer shared by the hero and the island experience. -->
+    <div class="world" id="world" aria-hidden="true">
+      <canvas class="world__canvas" id="world-canvas"></canvas>
+      <div class="world__labels" id="world-labels"></div>
+    </div>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero__content">
+          <p class="eyebrow hero__eyebrow" data-hero-reveal>An island of many worlds</p>
+          <h1 class="hero__title" id="hero-title" data-hero-reveal>
+            Discover the soul <em>of</em> Sri&nbsp;Lanka.
+          </h1>
+          <p class="hero__text" data-hero-reveal>
+            From mist-covered highlands to sunlit shores, explore the island through its landscapes, culture, and stories.
+          </p>
+          <div class="hero__actions" data-hero-reveal>
+            <a class="button button--primary" href="#island" data-scroll-to-island>
+              <span>Explore the Island</span>
+              <span class="button__icon" aria-hidden="true"><i data-lucide="arrow-down"></i></span>
+            </a>
+          </div>
+        </div>
+        <div class="hero__meta" data-hero-reveal>
+          <span>7.8731° N</span>
+          <span class="hero__meta-rule" aria-hidden="true"></span>
+          <span>80.7718° E</span>
+        </div>
+        <a class="scroll-indicator" href="#island" data-scroll-to-island aria-label="Scroll to the island experience">
+          <span class="scroll-indicator__label">Scroll</span>
+          <span class="scroll-indicator__line" aria-hidden="true"></span>
+        </a>
+      </section>
+
+      <section class="island-experience" id="island" aria-labelledby="island-title">
+        <div class="island-experience__stage">
+          <div class="island-experience__intro" id="island-intro">
+            <p class="eyebrow">The island in five chapters</p>
+            <h2 class="island-experience__title" id="island-title">A miniature Sri Lanka, <em>shaped by real terrain.</em></h2>
+            <p class="island-experience__lede">
+              Scroll to travel from the western coast to the northern peninsula, the hill country and the southern shore.
+            </p>
+          </div>
+
+          <div class="destination-cards" id="destination-cards" aria-live="polite"></div>
+
+          <nav class="destination-nav" id="destination-nav" aria-label="Destinations"></nav>
+
+          <p class="island-experience__attribution">
+            Elevation: SRTM via AWS Terrain Tiles · Coastline © OpenStreetMap contributors (geoBoundaries) · Heights ×<span id="exaggeration-label">7</span>
+          </p>
+        </div>
+
+        <!-- Invisible scroll stages: one overview step followed by one step per destination. -->
+        <div class="island-experience__steps" id="island-steps" aria-hidden="true"></div>
+      </section>
+
+      <section class="editorial" id="about" aria-labelledby="editorial-title">
+        <div class="editorial__inner">
+          <header class="editorial__header">
+            <p class="eyebrow" data-reveal>About the island</p>
+            <h2 class="editorial__title" id="editorial-title" data-reveal>One island. <em>A thousand stories.</em></h2>
+            <p class="editorial__lede" data-reveal>
+              Sri Lanka packs rainforest, cloud-draped mountains, ancient cities and more than 1,300 kilometres of coastline into
+              an island smaller than Ireland. Two and a half thousand years of recorded history, Buddhist, Hindu, Muslim and
+              Christian traditions, and a climate that shifts from monsoon-soaked south-west to sun-baked north make every
+              journey here feel like several.
+            </p>
+          </header>
+
+          <figure class="editorial__feature" data-reveal>
+            <div class="editorial__feature-media">
+              <img
+                src="/assets/images/editorial/highlands.webp"
+                alt="A blue train crossing the Nine Arches Bridge in forested hills near Ella."
+                width="2200"
+                height="1375"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <figcaption class="editorial__caption">The hill country railway near Ella, Uva Province.</figcaption>
+          </figure>
+
+          <div class="editorial__grid">
+            <article class="story-block" data-reveal>
+              <div class="story-block__media">
+                <img
+                  src="/assets/images/editorial/culture.webp"
+                  alt="A Kandyan dancer in a silver headdress and ornate costume performing against a dark background."
+                  width="1400"
+                  height="937"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <p class="story-block__index">I.</p>
+              <h3 class="story-block__title">Culture</h3>
+              <p class="story-block__text">
+                Drummers, dancers and festivals such as Kandy's Esala Perahera keep centuries-old traditions vividly alive.
+              </p>
+            </article>
+            <article class="story-block" data-reveal>
+              <div class="story-block__media">
+                <img
+                  src="/assets/images/editorial/landscapes.webp"
+                  alt="A quiet golden beach at Mirissa fringed by palms and a forested headland."
+                  width="1400"
+                  height="933"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <p class="story-block__index">II.</p>
+              <h3 class="story-block__title">Landscapes</h3>
+              <p class="story-block__text">
+                Within a day you can trade palm-lined southern bays for misty tea country two kilometres above the sea.
+              </p>
+            </article>
+            <article class="story-block" data-reveal>
+              <div class="story-block__media">
+                <img
+                  src="/assets/images/editorial/heritage.webp"
+                  alt="The great reclining Buddha carved from granite at Gal Vihara, Polonnaruwa."
+                  width="1400"
+                  height="919"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <p class="story-block__index">III.</p>
+              <h3 class="story-block__title">Heritage</h3>
+              <p class="story-block__text">
+                Eight UNESCO World Heritage Sites span ancient royal capitals, cave temples, a sacred city and a colonial fort.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="site-footer">
+      <div class="site-footer__inner">
+        <div class="site-footer__brand">
+          <a class="site-footer__logo" href="#top">Island <span aria-hidden="true">/</span> Journal</a>
+          <p class="site-footer__statement">
+            Slow, considered journeys through Sri Lanka — told through its landscapes, its people and its stories.
+          </p>
+        </div>
+
+        <nav class="site-footer__column" aria-label="Footer">
+          <h2 class="site-footer__heading">Explore</h2>
+          <ul>
+            <li><a href="#top">Discover</a></li>
+            <li><a href="#island">Destinations</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </nav>
+
+        <nav class="site-footer__column" aria-label="Destinations">
+          <h2 class="site-footer__heading">Destinations</h2>
+          <ul id="footer-destinations"></ul>
+        </nav>
+
+        <div class="site-footer__column">
+          <h2 class="site-footer__heading">Follow</h2>
+          <ul>
+            <li><a href="https://www.instagram.com/" rel="noopener" target="_blank">Instagram</a></li>
+            <li><a href="https://www.pinterest.com/" rel="noopener" target="_blank">Pinterest</a></li>
+            <li><a href="https://www.youtube.com/" rel="noopener" target="_blank">YouTube</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="site-footer__bottom">
+        <p>&copy; <span id="copyright-year">2026</span> Island Journal. Sample content.</p>
+        <details class="site-footer__credits">
+          <summary>Data &amp; image credits</summary>
+          <ul id="credits-list">
+            <li>Coastline: geoBoundaries (Runfola et al. 2020), data © OpenStreetMap contributors, ODbL 1.0.</li>
+            <li>Elevation &amp; bathymetry: AWS Terrain Tiles — SRTM (NASA), ETOPO1 (NOAA), GMTED2010 (USGS).</li>
+            <li>Ambient audio: original synthesis, Island Journal.</li>
+          </ul>
+        </details>
+        <a class="back-to-top" href="#top" id="back-to-top">
+          <span>Back to top</span>
+          <span class="back-to-top__icon" aria-hidden="true"><i data-lucide="arrow-up"></i></span>
+        </a>
+      </div>
+    </footer>
+
+    <noscript>
+      <p class="noscript-message">The interactive 3D island requires JavaScript. The editorial content below remains available.</p>
+    </noscript>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

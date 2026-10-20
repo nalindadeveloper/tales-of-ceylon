@@ -1,0 +1,48 @@
+@use '../abstracts' as *;
+
+.site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: $z-header;
+  color: var(--color-ivory-50);
+  transition:
+    background-color $duration-base $ease-out,
+    backdrop-filter $duration-base $ease-out,
+    border-color $duration-base $ease-out;
+  border-bottom: 1px solid transparent;
+
+  &.is-scrolled,
+  &.is-menu-open {
+    background: rgb(13 35 56 / 0.78);
+    backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom-color: var(--color-hairline);
+  }
+}
+
+.site-header__inner {
+  @extend %container;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(6);
+  height: var(--header-height);
+}
+
+.site-header__logo {
+  @include eyebrow;
+  font-size: 0.8rem;
+  letter-spacing: 0.32em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-header__slash {
+  color: var(--color-gold-500);
+  padding-inline: 0.15em;
+}
+
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}

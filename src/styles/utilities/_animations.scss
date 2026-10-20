@@ -1,0 +1,44 @@
+@use '../abstracts' as *;
+
+@keyframes scroll-line {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  55%,
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes contour-breathe {
+  0%,
+  100% {
+    stroke-opacity: 0.6;
+  }
+
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+@keyframes sound-bar {
+  from {
+    height: 25%;
+  }
+
+  to {
+    height: 100%;
+  }
+}
+
+@include reduced-motion {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

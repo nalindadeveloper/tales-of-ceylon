@@ -1,0 +1,10 @@
+.u-nowrap {
+  white-space: nowrap;
+}
+
+.u-container {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}

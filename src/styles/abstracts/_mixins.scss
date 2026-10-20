@@ -1,0 +1,58 @@
+@use 'variables' as *;
+@use 'functions' as *;
+
+/// Mobile-first media query: styles apply from the breakpoint upwards.
+@mixin from($name) {
+  @media (min-width: breakpoint($name)) {
+    @content;
+  }
+}
+
+/// Styles below a breakpoint (use sparingly; prefer `from`).
+@mixin until($name) {
+  @media (max-width: calc(#{breakpoint($name)} - 1px)) {
+    @content;
+  }
+}
+
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+@mixin hover {
+  @media (hover: hover) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+@mixin focus-ring($color: var(--color-gold-300)) {
+  outline: 2px solid $color;
+  outline-offset: 3px;
+}
+
+@mixin display-type($size) {
+  font-family: var(--font-display);
+  font-size: $size;
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+
+@mixin eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+@mixin cover-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

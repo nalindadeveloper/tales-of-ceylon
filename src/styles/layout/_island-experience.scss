@@ -1,0 +1,174 @@
+@use '../abstracts' as *;
+
+// ---- Fixed WebGL layer --------------------------------------------------
+.world {
+  position: fixed;
+  inset: 0;
+  z-index: $z-world;
+  background: var(--color-ocean-900);
+}
+
+.world__canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+}
+
+.world__labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s linear;
+}
+
+// ---- Scroll section ------------------------------------------------------
+.island-experience {
+  position: relative;
+  pointer-events: none;
+}
+
+.island-experience__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  pointer-events: none; // the canvas underneath handles marker clicks
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.island-experience__steps {
+  margin-top: -100vh;
+  margin-top: -100svh;
+  pointer-events: none; // scroll spacers only; clicks pass through to the canvas
+}
+
+.island-experience__step {
+  height: 115vh;
+  height: 115svh;
+
+  &--overview {
+    height: 100vh;
+    height: 100svh;
+  }
+}
+
+// ---- Overview intro panel -------------------------------------------------
+.island-experience__intro {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: calc(var(--header-height) + #{space(16)});
+  max-width: 30rem;
+
+  @include from(md) {
+    top: auto;
+    bottom: 14vh;
+  }
+}
+
+.island-experience__title {
+  @include display-type(fluid(2.2rem, 3.8rem));
+  margin-block: space(4);
+
+  em {
+    color: var(--color-gold-300);
+  }
+}
+
+.island-experience__lede {
+  max-width: 24rem;
+  color: rgb(248 244 236 / 0.78);
+}
+
+.island-experience__attribution {
+  position: absolute;
+  right: var(--gutter);
+  bottom: space(3);
+  max-width: calc(100% - 2 * var(--gutter));
+  color: rgb(248 244 236 / 0.5);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-align: right;
+
+  @include until(md) {
+    display: none;
+  }
+}
+
+// ---- Static fallback (no WebGL) ------------------------------------------
+.is-fallback {
+  .hero::before {
+    background: linear-gradient(160deg, var(--color-ocean-800), var(--color-ocean-900));
+  }
+
+  .island-experience__stage {
+    position: static;
+    height: auto;
+    display: grid;
+    grid-template-areas: 'intro' 'map' 'nav' 'cards';
+    gap: space(10);
+    padding: space(24) var(--gutter);
+
+    @include from(md) {
+      grid-template-columns: minmax(16rem, 1fr) 2fr;
+      grid-template-areas: 'intro intro' 'map cards' 'nav cards';
+      align-items: start;
+    }
+  }
+
+  .fallback-map {
+    grid-area: map;
+  }
+
+  .destination-cards {
+    grid-area: cards;
+  }
+
+  .destination-nav {
+    grid-area: nav;
+  }
+
+  .island-experience__steps,
+  .island-experience__attribution {
+    display: none;
+  }
+
+  .island-experience__intro {
+    position: static;
+    opacity: 1 !important;
+    visibility: visible !important;
+    grid-area: intro;
+  }
+}
+
+.fallback-map {
+  margin: 0;
+
+  svg {
+    width: 100%;
+    max-height: 70vh;
+  }
+}
+
+.fallback-map__land {
+  fill: var(--color-forest-700);
+  stroke: var(--color-gold-300);
+  stroke-width: 0.8;
+}
+
+.fallback-map__dot {
+  fill: var(--color-gold-500);
+  stroke: var(--color-ivory-50);
+  stroke-width: 1.5;
+}
+
+.fallback-map__label {
+  fill: var(--color-ivory-50);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+}

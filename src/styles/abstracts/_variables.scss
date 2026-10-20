@@ -1,0 +1,45 @@
+// Design tokens. Sass values are used for compile-time maths; the same values
+// are exposed as CSS custom properties in base/_global.scss.
+
+$color-ocean-950: #081a2b;
+$color-ocean-900: #0d2338;
+$color-ocean-800: #12324f;
+$color-ocean-600: #1f4f74;
+$color-forest-700: #2f5c33;
+$color-forest-500: #4e7c3e;
+$color-ivory-50: #f8f4ec;
+$color-ivory-100: #f0e9db;
+$color-ivory-300: #ddd2bd;
+$color-charcoal-900: #17191b;
+$color-charcoal-700: #2c3034;
+$color-charcoal-500: #5b5f63;
+$color-gold-500: #c9a45c;
+$color-gold-300: #e2c88f;
+
+$font-display: 'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;
+$font-sans: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+$breakpoints: (
+  sm: 600px,
+  md: 900px,
+  lg: 1200px,
+  xl: 1600px,
+);
+
+$space-unit: 0.25rem;
+$gutter: clamp(1rem, 4vw, 4rem);
+$header-height: 4.5rem;
+$radius-sm: 2px;
+$radius-md: 6px;
+
+$ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+$ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+$duration-fast: 0.2s;
+$duration-base: 0.45s;
+
+$z-world: 0;
+$z-content: 1;
+$z-editorial: 2;
+$z-header: 50;
+$z-grain: 90;
+$z-loading: 200;
