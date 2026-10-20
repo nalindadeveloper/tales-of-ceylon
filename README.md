@@ -24,6 +24,17 @@ npm run preview    # serve the production build
 The preprocessed terrain, images and audio are committed in `public/assets/`,
 so the site runs without re-running any data scripts.
 
+### Deployment
+
+Live site: **https://nalindadeveloper.github.io/tales-of-ceylon/**
+
+Every push to `main` builds and publishes the site through
+`.github/workflows/deploy.yml` (GitHub Pages, "GitHub Actions" source). The
+workflow sets `BASE_PATH=/<repository>/`; Vite's `base` and
+`src/utils/asset-url.js` make every asset path follow it. To host at a domain
+root instead (own server, Netlify, a custom domain), build without
+`BASE_PATH` and upload `dist/`.
+
 ### Asset scripts (optional)
 
 | Command                 | What it does                                                                    |
