@@ -15,6 +15,7 @@
  */
 import { Color, DoubleSide, MeshStandardMaterial, ObjectSpaceNormalMap } from 'three';
 import { TERRAIN_PALETTE } from './terrain-palette.js';
+import { receiveCloudShadows } from '../three/clouds.js';
 
 const DETAIL_NOISE_GLSL = /* glsl */ `
   varying vec3 vTerrainWorld;
@@ -32,7 +33,11 @@ const DETAIL_NOISE_GLSL = /* glsl */ `
   }
 `;
 
-export function createSurfaceMaterial({ albedo, normal }) {
+/**
+ * @param {{albedo, normal, vegetation?}} textures  vegetation.g is the river
+ *   mask: rivers become dark, glossy water that catches the sky.
+ */
+export function createSurfaceMaterial({ albedo, normal, vegetation }) {
   const material = new MeshStandardMaterial({
     map: albedo,
     normalMap: normal,
@@ -40,8 +45,11 @@ export function createSurfaceMaterial({ albedo, normal }) {
     roughness: 0.94,
     metalness: 0,
   });
+  const riverExpression = vegetation ? 'smoothstep(0.15, 0.7, texture2D(uVegetation, vMapUv).g)' : '0.0';
 
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.uVegetation = { value: vegetation ?? null };
+    shader.uniforms.uRiverColor = { value: new Color(TERRAIN_PALETTE.riverWater) };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainWorld;')
       .replace(
@@ -49,18 +57,25 @@ export function createSurfaceMaterial({ albedo, normal }) {
         '#include <project_vertex>\nvTerrainWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${DETAIL_NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\n${DETAIL_NOISE_GLSL}\nuniform sampler2D uVegetation;\nuniform vec3 uRiverColor;`)
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
         // Fine tonal variation (0.35 km and 1.2 km scales), faded out with distance.
         float detailFade = 1.0 - smoothstep(90.0, 320.0, length(cameraPosition - vTerrainWorld));
         float detail = terrainNoise(vTerrainWorld.xz * 2.8) * 0.6 + terrainNoise(vTerrainWorld.xz * 0.8) * 0.4;
-        diffuseColor.rgb *= mix(1.0, 0.9 + detail * 0.2, detailFade);`,
+        diffuseColor.rgb *= mix(1.0, 0.9 + detail * 0.2, detailFade);
+        float river = ${riverExpression};
+        diffuseColor.rgb = mix(diffuseColor.rgb, uRiverColor, river * 0.85);`,
+      )
+      .replace(
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, 0.16, river);`,
       );
   };
-  material.customProgramCacheKey = () => 'terrain-surface-v1';
-  return material;
+  material.customProgramCacheKey = () => `terrain-surface-v2-${vegetation ? 'rivers' : 'plain'}`;
+  return receiveCloudShadows(material, 'terrain');
 }
 
 /** Coastline wall: sandy at the top, dark earth below, lit like the land. */

@@ -35,5 +35,26 @@ export function createLighting({ bounds, shadows }) {
 
   const hemisphere = new HemisphereLight(new Color(config.skyColor), new Color(config.groundColor), config.hemisphereIntensity);
 
-  return { lights: [sun, sun.target, hemisphere], sun, direction };
+  const islandRadius = Math.max(bounds.width, bounds.depth) * 0.6;
+  let shadowRadius = islandRadius;
+  /**
+   * Keeps the shadow map focused on what the camera sees: at a destination it
+   * shrinks to a few tens of kilometres so individual trees cast shadows; in
+   * the overview it covers the whole island.
+   */
+  function update(focus, cameraDistance) {
+    if (!shadows) return;
+    const radius = Math.min(islandRadius, Math.max(25, cameraDistance * 0.75));
+    sun.target.position.set(focus.x, 0, focus.z);
+    sun.position.copy(sun.target.position).addScaledVector(direction, 900);
+    if (Math.abs(radius - shadowRadius) / shadowRadius > 0.01) {
+      shadowRadius = radius;
+      Object.assign(sun.shadow.camera, { left: -radius, right: radius, top: radius, bottom: -radius });
+      sun.shadow.camera.updateProjectionMatrix();
+      // Bias in world units must follow the texel size.
+      sun.shadow.normalBias = ((2 * radius) / config.shadowMapSize) * 1.2;
+    }
+  }
+
+  return { lights: [sun, sun.target, hemisphere], sun, direction, update };
 }

@@ -32,6 +32,8 @@ export const TERRAIN_PALETTE = Object.freeze({
   patana: '#76805a', // montane grassland of Horton Plains and the high plateaux
   rock: '#7c705f',
   river: '#47727a',
+  /** Runtime colour of glossy river water (terrain shader). */
+  riverWater: '#1d3b42',
   edgeTop: '#bba98a',
   edgeBottom: '#6e5c45',
 });

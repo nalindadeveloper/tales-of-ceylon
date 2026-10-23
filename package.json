@@ -9,10 +9,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "geo:fetch": "node scripts/geo/fetch-geodata.mjs",
-    "geo:build": "node scripts/geo/build-terrain.mjs",
+    "geo:build": "node scripts/geo/build-terrain.mjs && node scripts/geo/build-shore-field.mjs",
     "geo": "npm run geo:fetch && npm run geo:build",
     "assets:audio": "node scripts/assets/generate-ambient-audio.mjs",
-    "assets:images": "node scripts/assets/fetch-images.mjs"
+    "assets:images": "node scripts/assets/fetch-images.mjs",
+    "geo:shore": "node scripts/geo/build-shore-field.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

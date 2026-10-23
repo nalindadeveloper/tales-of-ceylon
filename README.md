@@ -40,7 +40,8 @@ root instead (own server, Netlify, a custom domain), build without
 | Command                 | What it does                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------- |
 | `npm run geo:fetch`     | Downloads the coastline and elevation tiles into `.geo-cache/raw` (~15 MB).     |
-| `npm run geo:build`     | Rebuilds every terrain asset from the cache (≈ 1.5–3 min).                      |
+| `npm run geo:build`     | Rebuilds every terrain asset from the cache (≈ 1.5–3 min), then the shore field. |
+| `npm run geo:shore`     | Rebuilds only the distance-to-coast field used by the surf (≈ 5 s).             |
 | `npm run geo`           | Both of the above.                                                              |
 | `npm run assets:images` | Downloads the Commons photographs, converts them to WebP, writes credits.json. |
 | `npm run assets:audio`  | Re-synthesises the ambient ocean loop.                                          |
@@ -146,10 +147,74 @@ match).
 
 `terrain-builder.js` extrudes a wall down from every coastline ring
 (`coastLift` above sea level to `wallDepth` below), so the island reads as a
-landmass rather than a paper cut-out. `ocean.js` is a single plane with a
-custom shader: baked bathymetry colour, a fade to deep blue beyond the data,
-fine drifting value-noise normals for a restrained sun glint, and fog. No
-simulation or render targets.
+landmass rather than a paper cut-out.
+
+`ocean.js` animates the sea entirely in one shader on a single plane (no
+simulation, no render targets). From tens of kilometres up, real waves are
+read through light, so the shader focuses on that:
+
+* **GPU FFT simulation** (`ocean-simulation.js`, `ocean-spectrum.js`), the
+  Tessendorf technique used by high-end ocean renderers. A wind-driven Phillips
+  spectrum is generated once on the CPU for three tiling cascades (12 km,
+  3.5 km, 1 km, each owning its own wavelength band). Every frame the GPU
+  advances it with the deep-water dispersion relation ω = √(g·k) — long
+  swells overtake short chop — and an inverse FFT (Stockham radix-2,
+  2·log₂N passes per cascade, N = 128, or 64 on low-power devices) produces
+  wave slopes and the choppy-wave Jacobian. Where the Jacobian folds, crests
+  break: foam is written to a persistent buffer that decays over a few
+  seconds, so it lingers behind the crest. The amplitude is normalised to a
+  configured RMS slope. GPUs without float render targets fall back to eight
+  analytic directional waves with the same dispersion.
+* **Anti-aliasing that becomes glitter.** Waves too small for the current
+  pixel size are faded out and their slope energy is added to the GGX
+  specular roughness. Up close you see individual waves; far away the same
+  energy spreads the sun into a broad, shimmering glint path.
+* **Light.** Schlick Fresnel sky reflection with a zenith-to-horizon
+  gradient, crest brightening, and drifting wind patches ("cat's paws") that
+  keep wide shots alive. Rare whitecaps appear on crests at close range.
+* **Surf.** `shore-distance.png` (exact distance to the coastline,
+  baked by `scripts/geo/build-shore-field.mjs`) drives swell lines that roll
+  towards the beach, sharpen and break into foam in sets, plus a pulsing wash
+  at the shoreline. An *openness* test (six samples of the field 6 km away)
+  keeps sheltered water such as the Jaffna lagoon and Palk Bay calm. When the
+  camera is too far to resolve single lines, surf becomes a soft white rim.
+* With reduced motion the sea is shown as a still frame.
+
+### Forest, clouds and rivers (aerial-map look)
+
+Inspired by hand-crafted aerial maps such as explore.ownprimland.com, the island
+is dressed with a living landscape:
+
+* **Instanced 3D forest** — `src/three/vegetation.js`. Tens of thousands of
+  low-poly tree crowns (two broadleaf shapes, montane trees in the hills,
+  coconut palms on the coast) are planted in 10 km chunks around the camera
+  focus whenever the camera is close to the island (destination views), and
+  rise out of the ground as they appear. Placement follows
+  `terrain-vegetation.webp`, baked with the terrain: dense wet-zone
+  rainforest, sparser dry zone with paddy-field clearings, tea estates with
+  forest patches in the hill country, open patana grassland on the plateaux,
+  none on beaches or rivers, and clearings around each destination landmark.
+  This map is **art-directed from the same climate zoning as the albedo, not
+  land-cover data.** Each chunk's trees are shuffled so drawing a prefix thins
+  the forest evenly: density falls off towards the edge of view, and a
+  frame-time governor thins it on slower GPUs (enlarging the remaining crowns
+  so the canopy stays closed) and restores it when there is headroom.
+* **Close-range shadows** — the sun's shadow map follows the camera focus
+  and tightens as you zoom in, so individual crowns cast shadows.
+* **Clouds** — `src/three/clouds.js`. One procedural density field drives a
+  drifting cloud layer above the peaks *and* cloud shadows on the terrain,
+  trees and ocean (each surface point looks up along the sun direction). The
+  focused destination is kept clear.
+* **Rivers** — the vegetation map's river channel turns DEM-derived rivers
+  into dark, glossy water that reflects the sky.
+* **Birds** — `src/three/birds.js`. Flocks of white egrets and darker birds
+  (one instanced mesh) fly loose formations along looping paths around the
+  focused destination, holding a clearance above the real terrain and banking
+  into turns. Wings flap in the vertex shader, alternating flapping and
+  gliding per bird; the shadow-depth material uses the same deformation, so
+  their shadows on the canopy flap too. Wingspans are stylised (~0.85 km) to
+  read from the camera height. Shown only in close views, regrouped at each
+  new destination, and omitted for reduced motion.
 
 ### Height sampling — `src/terrain/terrain-sampling.js`
 
@@ -254,8 +319,17 @@ disables the toggle if the file cannot load.
 
 ### Look and feel
 
-* Scene tunables — `src/data/scene-config.js`: coast lift, ocean colours and
-  waves, fog, sun direction and colour, camera FOV/overview/hero framing,
+* Birds — `BIRD_CONFIG` (number and size of flocks, wingspan, flight radius,
+  speed, altitude, flap speed, egret share and colours).
+* Forest and clouds — `VEGETATION_CONFIG` (density spacing, crown sizes,
+  colours, planting radius, frame-time target) and `CLOUD_CONFIG` (coverage,
+  altitude, scale, wind, shadow strength) in `src/data/scene-config.js`. The
+  forest layout itself comes from `terrain-vegetation.webp`
+  (`bakeVegetation` in `scripts/geo/build-terrain.mjs`; re-run `npm run geo:build`).
+* Scene tunables — `src/data/scene-config.js`: coast lift, ocean colours,
+  wind direction, wavelengths, steepness and speed (`OCEAN_CONFIG.waves`),
+  the FFT simulation — cascade sizes, peak wavelength, roughness, foam —
+  (`OCEAN_CONFIG.fft`), surf strength, fog, sun direction and colour, camera FOV/overview/hero framing,
   flight duration and hop, marker size and colours, quality tiers.
 * Terrain palette and climate zoning — `src/terrain/terrain-palette.js`
   (re-run `npm run geo:build` after editing).

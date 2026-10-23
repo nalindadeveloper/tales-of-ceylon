@@ -5,7 +5,7 @@
  */
 import { resolveUrl } from '../utils/asset-url.js';
 import { Timer } from 'three';
-import { QUALITY, TERRAIN_CONFIG } from '../data/scene-config.js';
+import { OCEAN_CONFIG, QUALITY, TERRAIN_CONFIG } from '../data/scene-config.js';
 import { computeDestinationPlacements } from '../geography/destination-placement.js';
 import { loadBoundary } from '../terrain/boundary-loader.js';
 import { loadElevationData } from '../terrain/elevation-loader.js';
@@ -20,6 +20,10 @@ import { createLighting } from './lighting.js';
 import { createMapMarkers } from './map-markers.js';
 import { createModelLoader } from './model-loader.js';
 import { createOcean } from './ocean.js';
+import { createClouds } from './clouds.js';
+import { createVegetation } from './vegetation.js';
+import { createBirds } from './birds.js';
+import { createOceanSimulation, isFFTOceanSupported } from './ocean-simulation.js';
 import { createRenderer } from './renderer.js';
 import { createScene } from './scene.js';
 
@@ -61,8 +65,27 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   const lighting = createLighting({ bounds: boundary.bounds, shadows: quality.shadows });
   scene.add(...lighting.lights);
 
-  const ocean = createOcean({ texture: elevation.textures.ocean, bounds: elevation.meta.ocean.bounds, sunDirection: lighting.direction });
+  const shoreMeta = elevation.meta.shore ?? { bounds: elevation.meta.ocean.bounds, maxDistanceKm: 12 };
+  // GPU FFT waves when supported; otherwise the ocean uses analytic waves.
+  let simulation = null;
+  if (OCEAN_CONFIG.fft.enabled && isFFTOceanSupported(renderer)) {
+    const resolution = qualityTier === 'low' ? OCEAN_CONFIG.fft.resolution / 2 : OCEAN_CONFIG.fft.resolution;
+    simulation = createOceanSimulation(renderer, { ...OCEAN_CONFIG.fft, resolution, windDirection: OCEAN_CONFIG.waves.windDirection, timeScale: OCEAN_CONFIG.waves.timeScale });
+  }
+  const ocean = createOcean({
+    texture: elevation.textures.ocean,
+    bounds: elevation.meta.ocean.bounds,
+    shoreTexture: elevation.textures.shore,
+    shoreBounds: shoreMeta.bounds,
+    shoreMaxKm: shoreMeta.maxDistanceKm,
+    sunDirection: lighting.direction,
+    reducedMotion,
+    simulation,
+  });
   scene.add(ocean.mesh);
+
+  const clouds = createClouds({ center: { x: boundary.bounds.centerX, z: boundary.bounds.centerZ }, sunDirection: lighting.direction });
+  scene.add(clouds.mesh);
 
   const sampler = createTerrainSampler(elevation.mesh, TERRAIN_CONFIG);
   const placements = computeDestinationPlacements(destinations, sampler);
@@ -79,6 +102,22 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   const modelLoader = createModelLoader();
   const objects = createDestinationObjects({ placements, modelLoader, shadows: quality.shadows, reducedMotion });
   scene.add(objects.group);
+
+  // Instanced forest around the camera focus (needs the vegetation map).
+  const vegetation = elevation.textures.vegetation
+    ? createVegetation({
+        vegetationTexture: elevation.textures.vegetation,
+        textureBounds: elevation.meta.textures.bounds,
+        sampler,
+        qualityTier,
+        shadows: quality.shadows,
+      })
+    : null;
+  if (vegetation) scene.add(vegetation.group);
+
+  // Flocks over the forest; left out entirely for reduced motion.
+  const birds = reducedMotion ? null : createBirds({ sampler, qualityTier, shadows: quality.shadows });
+  if (birds) scene.add(birds.mesh);
 
   const director = createCameraDirector({ rig, islandBounds: boundary.bounds, reducedMotion });
 
@@ -122,7 +161,11 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
     elapsed += delta;
     const focusDistance = director.update(elapsed, delta);
     updateFog(focusDistance);
-    ocean.update(elapsed);
+    ocean.update(elapsed, delta);
+    lighting.update(rig.target, focusDistance);
+    clouds.update(reducedMotion ? 0 : elapsed, rig.target, focusDistance);
+    vegetation?.update(rig.target, focusDistance, delta);
+    birds?.update(elapsed, delta, rig.target, focusDistance);
     markers.setVisibility(Math.min(1, Math.max(0, (director.getIntroProgress() - 0.55) / 0.35)));
     markers.update(rig.camera, elapsed, delta, viewport);
     objects.update(elapsed, delta);
@@ -140,7 +183,7 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   });
 
   // Development-only handle for inspecting the scene from the console.
-  if (import.meta.env.DEV) window.__island = { scene, rig, placements, sampler };
+  if (import.meta.env.DEV) window.__island = { scene, rig, placements, sampler, simulation, vegetation, birds };
 
   // First frame without damping, then start the loop.
   director.snap();
@@ -174,8 +217,12 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
       director.dispose();
       markers.dispose();
       objects.dispose();
+      vegetation?.dispose();
+      birds?.dispose();
+      clouds.dispose();
       modelLoader.dispose();
       disposeObject3D(terrain.group);
+      ocean.dispose();
       disposeObject3D(ocean.mesh);
       cleanup.run();
     },

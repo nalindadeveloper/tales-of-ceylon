@@ -47,6 +47,7 @@ import {
   ROOT,
 } from './geo-config.mjs';
 import { createDemSampler } from './tiles.mjs';
+import { DESTINATIONS } from '../../src/data/destinations.js';
 import { boxBlur, distanceTransform, fbm, flowAccumulation, rasterizeRings } from './raster-utils.mjs';
 
 const RAW_DIR = resolve(CACHE_DIR, 'raw');
@@ -522,7 +523,63 @@ function climateWetness(x, z, elevation) {
   return clamp01(Math.max(lowlandWet, highlandWet));
 }
 
-function bakeAlbedo(grid, landHeights, mask, coastDistanceKm, rivers) {
+/** Radius (km) kept free of trees around each destination landmark / town. */
+const CLEARING_RADIUS_KM = { colombo: 11, kandy: 4, jaffna: 6, 'nuwara-eliya': 3.5, galle: 4 };
+
+/**
+ * Vegetation map for the instanced 3D forest (art-directed, NOT land-cover
+ * data — it follows the same climate zoning as the albedo):
+ *   R  canopy density 0–1 (wet-zone rainforest dense, dry-zone scrub sparse,
+ *      paddy-field clearings in the lowlands, low tea estates in the hill
+ *      country, open patana grassland on the high plateaux)
+ *   G  river mask (glossy water in the terrain shader)
+ *   B  share of coconut palms (coastal belt)
+ */
+function bakeVegetation(grid, landHeights, mask, coastDistanceKm, rivers) {
+  const { width, height, pixelKm } = grid;
+  const density = new Float32Array(width * height);
+  const rgb = Buffer.alloc(width * height * 3);
+  const at = (x, y) => landHeights[Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))];
+  const clearings = DESTINATIONS.map((d) => ({ ...projectLonLat(d.longitude, d.latitude), radius: CLEARING_RADIUS_KM[d.id] ?? 4 }));
+  const B = ELEVATION_BANDS;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      if (!mask[i]) continue;
+      const [wx, wz] = grid.centre(x, y);
+      const elevation = landHeights[i];
+      const slope = Math.hypot((at(x + 1, y) - at(x - 1, y)) / (2 * pixelKm * 1000), (at(x, y + 1) - at(x, y - 1)) / (2 * pixelKm * 1000));
+      const wet = climateWetness(wx, wz, elevation);
+
+      let d = 0.38 + 0.55 * wet;
+      // Paddy fields and village clearings across the lowlands.
+      const paddy = smoothstep(0.5, 0.62, fbm(wx / 4.5 + 3.1, wz / 4.5 - 8.7, 4)) * (1 - smoothstep(150, 500, elevation));
+      d *= 1 - paddy * 0.92;
+      // Hill country: tea estates are low shrubs with forest patches in between.
+      const teaZone = smoothstep(750, 1050, elevation) * (1 - smoothstep(1850, 2100, elevation));
+      const forestPatch = smoothstep(0.55, 0.7, fbm(wx / 2.5 - 40, wz / 2.5 + 12, 3));
+      d = d * (1 - teaZone * 0.75) + teaZone * 0.75 * (0.12 + 0.75 * forestPatch);
+      // Open montane grassland (patana) on the highest plateaux.
+      d *= 1 - smoothstep(B.montaneTop - 100, B.montaneTop + 150, elevation) * 0.75;
+      d *= 1 - smoothstep(0.55, 0.9, slope) * 0.5;           // bare cliffs
+      d *= smoothstep(0.25, 0.8, coastDistanceKm[i]);       // beaches
+      d *= 1 - rivers[i];
+      for (const c of clearings) d *= smoothstep(c.radius * 0.7, c.radius * 1.15, Math.hypot(wx - c.x, wz - c.z));
+      d *= 0.82 + 0.3 * fbm(wx / 0.9, wz / 0.9, 2);
+      d = clamp01(d);
+
+      const palms = (1 - smoothstep(0.8, 7, coastDistanceKm[i])) * (0.4 + 0.6 * wet) * (1 - smoothstep(60, 200, elevation));
+      density[i] = d;
+      rgb[i * 3] = Math.round(d * 255);
+      rgb[i * 3 + 1] = Math.round(rivers[i] * 255);
+      rgb[i * 3 + 2] = Math.round(clamp01(palms) * 255);
+    }
+  }
+  return { rgb, density };
+}
+
+function bakeAlbedo(grid, landHeights, mask, coastDistanceKm, rivers, canopy) {
   const { width, height, pixelKm } = grid;
   const rgb = Buffer.alloc(width * height * 3);
   // Local "openness": valleys sit below their blurred surroundings → darker.
@@ -561,7 +618,8 @@ function bakeAlbedo(grid, landHeights, mask, coastDistanceKm, rivers) {
       c = mix(c, P.river, rivers[i] * 0.85);
 
       const ambientOcclusion = Math.min(1.06, Math.max(0.74, 1 + (elevation - blurred[i]) / 650));
-      const tone = (0.93 + 0.14 * fineNoise) * ambientOcclusion;
+      // The ground under dense canopy reads darker and mossier from above.
+      const tone = (0.93 + 0.14 * fineNoise) * ambientOcclusion * (1 - 0.2 * canopy[i]);
       rgb[i * 3] = Math.min(255, Math.round(c[0] * tone));
       rgb[i * 3 + 1] = Math.min(255, Math.round(c[1] * tone));
       rgb[i * 3 + 2] = Math.min(255, Math.round(c[2] * tone));
@@ -811,7 +869,9 @@ async function main() {
 
   console.log('[geo:build] Rivers (flow accumulation) + albedo…');
   const { rivers } = bakeRivers(grid, landHeights, mask);
-  const albedoRgb = bakeAlbedo(grid, landHeights, mask, coastDistanceKm, rivers);
+  const vegetation = bakeVegetation(grid, landHeights, mask, coastDistanceKm, rivers);
+  await sharp(vegetation.rgb, { raw: { width: grid.width, height: grid.height, channels: 3 } }).webp({ lossless: true, effort: 6 }).toFile(resolve(OUTPUT_TERRAIN_DIR, 'terrain-vegetation.webp'));
+  const albedoRgb = bakeAlbedo(grid, landHeights, mask, coastDistanceKm, rivers, vegetation.density);
   await writeImage(albedoRgb, grid.width, grid.height, resolve(OUTPUT_TERRAIN_DIR, 'terrain-albedo.webp'), { quality: 86 });
 
   console.log('[geo:build] Ocean bathymetry…');
@@ -836,6 +896,8 @@ async function main() {
       height: grid.height,
       metresPerPixel: Math.round(grid.pixelKm * 1000),
       albedo: 'terrain-albedo.webp',
+      vegetation: 'terrain-vegetation.webp',
+      vegetationChannels: 'R canopy density, G river mask, B coconut-palm share (art-directed, not land-cover data)',
       normal: 'terrain-normal.webp',
       normalSpace: 'object (x east, y up, z south)',
     },

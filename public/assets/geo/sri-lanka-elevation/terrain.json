@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-20T19:10:51.464Z",
+  "generatedAt": "2026-10-23T17:23:08.678Z",
   "units": "Horizontal positions in km (scene units); heights in metres.",
   "projection": {
     "type": "local-equirectangular",
@@ -41,6 +41,8 @@
     "height": 2048,
     "metresPerPixel": 215,
     "albedo": "terrain-albedo.webp",
+    "vegetation": "terrain-vegetation.webp",
+    "vegetationChannels": "R canopy density, G river mask, B coconut-palm share (art-directed, not land-cover data)",
     "normal": "terrain-normal.webp",
     "normalSpace": "object (x east, y up, z south)"
   },
@@ -73,5 +75,16 @@
   "notes": [
     "Colours are art-directed from elevation, slope, coastal distance and an approximate wet/dry climate zoning; they are not land-cover data.",
     "Rivers are derived from the DEM by flow accumulation (upstream area ≥ 320 km²)."
-  ]
+  ],
+  "shore": {
+    "texture": "shore-distance.png",
+    "bounds": {
+      "minX": -129.56709797299644,
+      "minZ": -234.81007837694727,
+      "maxX": 144.0329020270036,
+      "maxZ": 228.78992162305275
+    },
+    "maxDistanceKm": 12,
+    "encoding": "grey = sqrt(distance / maxDistanceKm); exact distance to coastline segments"
+  }
 }
