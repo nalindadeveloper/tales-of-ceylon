@@ -23,6 +23,8 @@ export function createScrollController({ section, stepsContainer, count, transit
   const triggers = [];
   const steps = [];
   let navigationLock = null;
+  /** Optional veto on scroll-driven activation (see setActivationFilter). */
+  let activationFilter = null;
 
   // Step 0 = overview, steps 1…count = destinations.
   for (let i = 0; i <= count; i++) {
@@ -40,7 +42,9 @@ export function createScrollController({ section, stepsContainer, count, transit
         start: `top ${ACTIVATION_LINE}`,
         end: `bottom ${ACTIVATION_LINE}`,
         onToggle: (self) => {
-          if (self.isActive && !navigationLock) transitions.setActive(i - 1, { source: 'scroll' });
+          if (self.isActive && !navigationLock && (!activationFilter || activationFilter(i - 1))) {
+            transitions.setActive(i - 1, { source: 'scroll' });
+          }
         },
       }),
     );
@@ -78,8 +82,11 @@ export function createScrollController({ section, stepsContainer, count, transit
 
   /**
    * Activates a destination (−1 = overview) and scrolls to its step.
+   * `immediate` jumps instead of animating: inside the sticky island section
+   * the jump is invisible (the camera flight is the visible transition) and
+   * it avoids any race with a long-running scroll animation.
    */
-  async function navigateTo(index) {
+  async function navigateTo(index, { immediate = false } = {}) {
     const step = steps[index + 1];
     if (!step) return;
     const token = {};
@@ -87,11 +94,20 @@ export function createScrollController({ section, stepsContainer, count, transit
     transitions.setActive(index, { source: 'navigation' });
     // Land the step's centre on the activation line.
     const offset = -(window.innerHeight / 2) + step.offsetHeight / 2;
-    await smoothScroll.scrollTo(step, { offset });
+    await smoothScroll.scrollTo(step, { offset, immediate });
+    // Let ScrollTrigger process the new position while the lock still holds.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    ScrollTrigger.update();
     if (navigationLock === token) {
       navigationLock = null;
       syncWithScroll();
     }
+  }
+
+  /** Scroll position that centres a stage's step on the activation line (−1 = overview). */
+  function stepScrollY(index) {
+    const step = steps[index + 1];
+    return step.getBoundingClientRect().top + window.scrollY + step.offsetHeight / 2 - window.innerHeight / 2;
   }
 
   function refresh() {
@@ -103,5 +119,14 @@ export function createScrollController({ section, stepsContainer, count, transit
     steps.forEach((step) => step.remove());
   }
 
-  return { navigateTo, refresh, syncWithScroll, dispose, steps };
+  return {
+    navigateTo,
+    stepScrollY,
+    refresh,
+    syncWithScroll,
+    /** Lets a stepped-navigation layer decide which stages free scrolling may activate. */
+    setActivationFilter: (filter) => (activationFilter = filter),
+    dispose,
+    steps,
+  };
 }

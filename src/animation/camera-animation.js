@@ -40,6 +40,7 @@ export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
   const hop = { value: 0 };
   const veil = { amount: 0, phase: 0 };
   let followedIntro = 0; // intro progress as the damped camera actually shows it
+  let introSettled = true; // damped intro camera has reached its pose
   let mode = 'intro';
   let introProgress = 0;
   let flight = null;
@@ -142,6 +143,9 @@ export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
     let yaw = 0;
     if (mode === 'intro') {
       const desired = introPose();
+      introSettled =
+        Math.abs(desired.distance - current.distance) < desired.distance * 0.01 &&
+        Math.hypot(desired.tx - current.tx, desired.tz - current.tz) < Math.max(0.5, desired.distance * 0.005);
       const damping = reducedMotion ? 1 : 1 - Math.exp(-delta * 3.2);
       for (const key of POSE_KEYS) current[key] += (desired[key] - current[key]) * damping;
       current.azimuth += angleDelta(current.azimuth, desired.azimuth) * damping;
@@ -184,6 +188,8 @@ export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
     getIntroProgress: () => introProgress,
     /** Cloud fly-through state for the veil layer: { amount 0–1, phase }. */
     getVeil: () => veil,
+    /** True once no flight is running and the intro camera has reached its pose. */
+    isSettled: () => flight === null && (mode !== 'intro' || introSettled),
     dispose: () => flight?.kill(),
   };
 }

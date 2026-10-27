@@ -6,6 +6,9 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+/** Duration of programmatic smooth scrolls (seconds). */
+const SCROLL_DURATION_S = 1.6;
+
 export function createSmoothScroll({ reducedMotion }) {
   let lenis = null;
   let tick = null;
@@ -25,8 +28,16 @@ export function createSmoothScroll({ reducedMotion }) {
   function scrollTo(target, { offset = 0, immediate = false } = {}) {
     return new Promise((resolve) => {
       if (lenis) {
-        lenis.scrollTo(target, { offset, immediate, duration: immediate ? 0 : 1.6, onComplete: resolve, force: true });
-        if (immediate) resolve();
+        const duration = immediate ? 0 : SCROLL_DURATION_S;
+        // Lenis skips onComplete when an animation is interrupted (user input,
+        // another scrollTo), so a timeout guarantees the promise settles.
+        const fallback = window.setTimeout(resolve, duration * 1000 + 300);
+        const done = () => {
+          window.clearTimeout(fallback);
+          resolve();
+        };
+        lenis.scrollTo(target, { offset, immediate, duration, onComplete: done, force: true });
+        if (immediate) done();
         return;
       }
       const top = typeof target === 'number' ? target : target.getBoundingClientRect().top + window.scrollY;

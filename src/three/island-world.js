@@ -190,6 +190,8 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
       else director.focusDestination(placements[index]);
     },
     setIntroProgress: (progress) => director.setIntroProgress(progress),
+    /** True while the camera is still flying or settling. */
+    isCameraMoving: () => !director.isSettled(),
     setSectionVisible(visible) {
       sectionVisible = visible;
       updateLoop();

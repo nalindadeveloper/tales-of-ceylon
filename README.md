@@ -283,6 +283,18 @@ destination list call `navigateTo()`, which sets the state and scrolls to the
 matching step, so scroll position and state never disagree. Steps are detected
 by ScrollTrigger crossings — never timers — so scrolling up reverses the story.
 
+**One location per scroll.** `step-navigation.js` turns the destinations
+section into discrete stops (overview → Colombo → … → Galle). Each wheel
+flick, swipe or arrow / Page key moves exactly one stop; input is locked while
+the camera pans and released only once it has settled, and trackpad momentum
+is ignored until a new gesture starts, so one flick never skips a location.
+Within the sticky section the page position jumps instantly (invisible — the
+camera flight is the transition), which avoids races with scroll animations.
+Free scrolling only applies at the edges: up from the overview zooms back out
+through the clouds to the hero, down from Galle continues to the editorial.
+A fast scroll that would carry past either edge is caught there, and scroll
+triggers can never activate a destination on their own.
+
 **Loading.** `asset-loader.js` tracks the *essential* assets (coastline, mesh,
 terrain and ocean textures) through a Three.js `LoadingManager` with real file
 and byte progress. Landmark models, audio and credits are *optional*: they load

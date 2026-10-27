@@ -19,6 +19,7 @@ import { TERRAIN_CONFIG } from './data/scene-config.js';
 import { createAmbientAudio } from './audio/ambient-audio.js';
 import { initPageAnimations } from './animation/reveal-animations.js';
 import { createScrollController } from './animation/scroll-controller.js';
+import { createStepNavigation } from './animation/step-navigation.js';
 import { createTransitionManager } from './animation/transition-manager.js';
 import { createDestinationCards } from './ui/destination-cards.js';
 import { createDestinationNav } from './ui/destination-nav.js';
@@ -123,7 +124,10 @@ async function init() {
 
   // ---- Scroll storytelling ----------------------------------------------
   let scroll = null;
-  const select = (index) => scroll?.navigateTo(index);
+  let stepNavigation = null;
+  // Nav list and marker clicks go through the stepped navigation when it
+  // exists, so they also lock input until the camera has arrived.
+  const select = (index) => (stepNavigation ?? scroll)?.navigateTo(index);
   const nav = createDestinationNav({ container: $('#destination-nav'), destinations: DESTINATIONS, onSelect: select });
 
   if (world) {
@@ -137,6 +141,7 @@ async function init() {
       onSectionVisibility: world.setSectionVisible,
     });
     world.onSelect(select);
+    stepNavigation = createStepNavigation({ scroll, transitions, world, count: DESTINATIONS.length });
     transitions.subscribe((index) => world.setActiveDestination(index));
     onMediaChange(MOBILE_LAYOUT_QUERY, () => scroll.refresh());
   } else {
