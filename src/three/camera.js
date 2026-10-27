@@ -57,8 +57,19 @@ export class CameraRig {
       pose.tz + distance * Math.sin(tilt) * Math.cos(azimuth),
     );
     this.camera.lookAt(this.target);
+    this.updateClipPlanes(distance);
+    // setViewOffset also refreshes the projection matrix.
     this.camera.setViewOffset(this.width, this.height, -pose.frameX * this.width, pose.frameY * this.height, this.width, this.height);
     return distance;
+  }
+
+  /**
+   * Keeps depth precision proportional to the viewing distance (see
+   * CAMERA_CONFIG.nearRatio): precision depends on far/near, not on scale.
+   */
+  updateClipPlanes(distance) {
+    this.camera.near = Math.max(CAMERA_CONFIG.near, distance * CAMERA_CONFIG.nearRatio);
+    this.camera.far = Math.max(CAMERA_CONFIG.far, distance * CAMERA_CONFIG.farRatio);
   }
 
   /**

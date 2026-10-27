@@ -15,6 +15,8 @@
     position: absolute;
     inset: 0;
     z-index: -1;
+    // Faded out by scroll (reveal-animations.js) so it never edges the cloud dive.
+    opacity: var(--hero-shade, 1);
     background:
       linear-gradient(180deg, rgb(13 35 56 / 0.25) 0%, transparent 30%, transparent 70%, rgb(13 35 56 / 0.55) 100%),
       linear-gradient(90deg, rgb(13 35 56 / 0.82) 0%, rgb(13 35 56 / 0.45) 45%, transparent 75%);

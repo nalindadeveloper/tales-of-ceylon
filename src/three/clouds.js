@@ -5,18 +5,19 @@
  * advected by the wind) is shared by:
  *   - the visible cloud layer, a transparent plane above the highest peaks,
  *     self-shadowed by sampling the density a little towards the sun;
- *   - cloud shadows on the terrain, the trees and the ocean: each surface
+ *   - cloud shadows on the terrain and the ocean: each surface
  *     point looks up along the sun direction to the cloud layer and dims its
  *     direct sunlight by the density found there.
  * Clouds thin out around the focused destination (radius proportional to the
  * camera distance) so the story's subject is never hidden.
  */
-import { Color, Mesh, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3 } from 'three';
+import { Color, Mesh, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector2, Vector3 } from 'three';
 import { CLOUD_CONFIG } from '../data/scene-config.js';
 
 /** Uniforms shared by every material that renders or receives clouds. */
 export const cloudUniforms = {
   uCloudTime: { value: 0 },
+  uCloudOffset: { value: new Vector2() }, // accumulated wind drift (km)
   uCloudCoverage: { value: CLOUD_CONFIG.coverage },
   uCloudHeight: { value: CLOUD_CONFIG.heightKm },
   uCloudScale: { value: CLOUD_CONFIG.scaleKm },
@@ -29,6 +30,7 @@ export const cloudUniforms = {
 /** GLSL shared by the cloud layer and every cloud-shadow receiver. */
 export const CLOUD_GLSL = /* glsl */ `
   uniform float uCloudTime;
+  uniform vec2 uCloudOffset;
   uniform float uCloudCoverage;
   uniform float uCloudHeight;
   uniform float uCloudScale;
@@ -54,7 +56,7 @@ export const CLOUD_GLSL = /* glsl */ `
     // Keep the focused destination clear (cheap test first).
     float clearing = smoothstep(uCloudFocus.z * 0.55, uCloudFocus.z, distance(p, uCloudFocus.xy));
     if (clearing <= 0.0) return 0.0;
-    vec2 q = (p - uCloudWind.xy * uCloudTime) / uCloudScale;
+    vec2 q = (p - uCloudOffset) / uCloudScale;
     float threshold = 1.0 - uCloudCoverage;
     float n = cloudNoise(q) * 0.5;
     q = q * 2.03 + vec2(13.7, -7.1);
@@ -175,8 +177,15 @@ export function createClouds({ center, sunDirection }) {
      * @param {{x:number,z:number}} focus camera target
      * @param {number} cameraDistance km
      */
-    update(time, focus, cameraDistance) {
+    /**
+     * Drift speed scales with camera distance so the clouds visibly glide in
+     * the wide opening view yet stay gentle in close destination views.
+     */
+    update(time, delta, focus, cameraDistance) {
       cloudUniforms.uCloudTime.value = time;
+      const driftScale = Math.min(CLOUD_CONFIG.maxDriftScale, Math.max(0.3, cameraDistance / CLOUD_CONFIG.driftReferenceKm));
+      cloudUniforms.uCloudOffset.value.x += CLOUD_CONFIG.windKmPerSecond[0] * driftScale * delta;
+      cloudUniforms.uCloudOffset.value.y += CLOUD_CONFIG.windKmPerSecond[1] * driftScale * delta;
       const clearRadius = Math.min(cameraDistance * CLOUD_CONFIG.focusClearing, CLOUD_CONFIG.maxClearingKm);
       cloudUniforms.uCloudFocus.value.set(focus.x, focus.z, clearRadius);
     },

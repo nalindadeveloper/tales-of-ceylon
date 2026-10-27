@@ -15,11 +15,16 @@
  * starts from the rig's current (possibly mid-flight) pose, so rapid scrolling
  * or clicking never causes jumps.
  *
+ * Cloud fly-through ("veil"): only during the intro zoom between the opening
+ * view and the island overview. It is scrubbed by the same scroll progress as
+ * the camera, so scrolling down dives in through the clouds and scrolling back
+ * up zooms out through them again. Flights between destinations have no veil.
+ *
  * The director never touches the DOM; it only receives targets and poses.
  */
 import gsap from 'gsap';
 import { MathUtils } from 'three';
-import { CAMERA_CONFIG, FRAMING } from '../data/scene-config.js';
+import { CAMERA_CONFIG, CLOUD_VEIL_CONFIG, FRAMING } from '../data/scene-config.js';
 import { isMobileLayout } from '../utils/environment.js';
 import { createPose } from '../three/camera.js';
 
@@ -33,6 +38,8 @@ function angleDelta(from, to) {
 export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
   const current = createPose();
   const hop = { value: 0 };
+  const veil = { amount: 0, phase: 0 };
+  let followedIntro = 0; // intro progress as the damped camera actually shows it
   let mode = 'intro';
   let introProgress = 0;
   let flight = null;
@@ -139,17 +146,32 @@ export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
       for (const key of POSE_KEYS) current[key] += (desired[key] - current[key]) * damping;
       current.azimuth += angleDelta(current.azimuth, desired.azimuth) * damping;
       hop.value += (0 - hop.value) * damping;
+      followedIntro += (introProgress - followedIntro) * damping;
       if (!reducedMotion) {
         const { idleYawDegrees, idlePeriodSeconds } = CAMERA_CONFIG.hero;
         yaw = Math.sin((time / idlePeriodSeconds) * Math.PI * 2) * idleYawDegrees * (1 - introProgress);
       }
     }
+    updateVeil();
     return rig.apply(current, hop.value, yaw);
+  }
+
+  /** Scroll-scrubbed intro veil: rises, peaks mid-dive, clears before the overview. */
+  function updateVeil() {
+    if (reducedMotion || mode !== 'intro') {
+      veil.amount = 0;
+      return;
+    }
+    const { introStart, introEnd } = CLOUD_VEIL_CONFIG;
+    const t = MathUtils.clamp((followedIntro - introStart) / (introEnd - introStart), 0, 1);
+    veil.amount = Math.pow(Math.sin(t * Math.PI), 1.3);
+    veil.phase = t * 2.6;
   }
 
   /** Jump straight to the current intro pose (first frame, no damping). */
   function snap() {
     Object.assign(current, introPose());
+    followedIntro = introProgress;
   }
 
   return {
@@ -160,6 +182,8 @@ export function createCameraDirector({ rig, islandBounds, reducedMotion }) {
     update,
     snap,
     getIntroProgress: () => introProgress,
+    /** Cloud fly-through state for the veil layer: { amount 0–1, phase }. */
+    getVeil: () => veil,
     dispose: () => flight?.kill(),
   };
 }

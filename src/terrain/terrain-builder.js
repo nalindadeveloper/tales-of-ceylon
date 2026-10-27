@@ -80,7 +80,7 @@ export function buildTerrain({ elevation, boundary, config, shadows }) {
   const group = new Group();
   group.name = 'terrain';
 
-  const surface = new Mesh(buildSurfaceGeometry(elevation.mesh, elevation.meta.textures.bounds), createSurfaceMaterial(elevation.textures));
+  const surface = new Mesh(buildSurfaceGeometry(elevation.mesh, elevation.meta.textures.bounds), createSurfaceMaterial({ ...elevation.textures, vegetation: config.riverOverlay ? elevation.textures.vegetation : null }));
   surface.name = 'terrain-surface';
   surface.position.y = config.coastLift;
   surface.receiveShadow = shadows;

@@ -27,11 +27,16 @@ function createOpenSeaTexture() {
   return texture;
 }
 
-export async function loadElevationData(loader, basePath, { maxAnisotropy = 1 } = {}) {
+export async function loadElevationData(loader, basePath, { maxAnisotropy = 1, surfaceTexture = FILES.albedo } = {}) {
   const [meta, buffer, albedo, normal, ocean, shore, vegetation] = await Promise.all([
     loader.loadJSON(basePath + FILES.meta),
     loader.loadArrayBuffer(basePath + FILES.mesh),
-    loader.loadTexture(basePath + FILES.albedo),
+    // Surface colour: the configured texture, or the procedural albedo if it is missing.
+    loader.loadTexture(basePath + surfaceTexture).catch((error) => {
+      if (surfaceTexture === FILES.albedo) throw error;
+      console.warn(`[terrain] ${surfaceTexture} missing — using ${FILES.albedo}.`);
+      return loader.loadTexture(basePath + FILES.albedo);
+    }),
     loader.loadTexture(basePath + FILES.normal),
     loader.loadTexture(basePath + FILES.ocean),
     // The surf field is decorative: a missing file only disables the surf.
@@ -39,9 +44,9 @@ export async function loadElevationData(loader, basePath, { maxAnisotropy = 1 } 
       console.warn('[terrain] shore-distance.png missing — run npm run geo:shore to enable surf.');
       return createOpenSeaTexture();
     }),
-    // Forest + rivers are decorative too: without the map there are no trees.
+    // Decorative too: the map's river channel makes rivers glossy.
     loader.loadTexture(basePath + FILES.vegetation).catch(() => {
-      console.warn('[terrain] terrain-vegetation.webp missing — run npm run geo:build to enable the forest.');
+      console.warn('[terrain] terrain-vegetation.webp missing — run npm run geo:build to enable glossy rivers.');
       return null;
     }),
   ]);

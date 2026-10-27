@@ -523,12 +523,13 @@ function climateWetness(x, z, elevation) {
   return clamp01(Math.max(lowlandWet, highlandWet));
 }
 
-/** Radius (km) kept free of trees around each destination landmark / town. */
+/** Radius (km) of open ground around each destination landmark / town. */
 const CLEARING_RADIUS_KM = { colombo: 11, kandy: 4, jaffna: 6, 'nuwara-eliya': 3.5, galle: 4 };
 
 /**
- * Vegetation map for the instanced 3D forest (art-directed, NOT land-cover
- * data — it follows the same climate zoning as the albedo):
+ * Vegetation map (art-directed, NOT land-cover data — it follows the same
+ * climate zoning as the albedo). At runtime the G channel makes rivers glossy;
+ * R darkens the ground under dense canopy in the albedo bake:
  *   R  canopy density 0–1 (wet-zone rainforest dense, dry-zone scrub sparse,
  *      paddy-field clearings in the lowlands, low tea estates in the hill
  *      country, open patana grassland on the high plateaux)

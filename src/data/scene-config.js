@@ -8,6 +8,18 @@ export const TERRAIN_CONFIG = {
   /** Base path of the preprocessed terrain assets (see scripts/geo). */
   basePath: '/assets/geo/sri-lanka-elevation/',
   boundaryUrl: '/assets/geo/sri-lanka-boundary.geojson',
+  /**
+   * Colour texture draped over the terrain (file in basePath). terrain-map.webp
+   * is generated from an island image by `npm run geo:map-texture`; set this to
+   * 'terrain-albedo.webp' for the procedural, elevation-painted colours.
+   * Falls back to terrain-albedo.webp if the file cannot be loaded.
+   */
+  surfaceTexture: 'terrain-map.webp',
+  /**
+   * Draws DEM-derived rivers as glossy water. Off for photographic textures,
+   * which already show the real rivers and reservoirs.
+   */
+  riverOverlay: false,
   /** Vertical exaggeration applied to real elevations (documented in README). */
   elevationMultiplier: BAKE_EXAGGERATION,
   /** The land surface sits this far above sea level so the island reads as a landmass. */
@@ -19,7 +31,11 @@ export const TERRAIN_CONFIG = {
 export const OCEAN_CONFIG = {
   size: 6000,
   deepColor: '#0d2b4c',
-  edgeFadeKm: 90,
+  /**
+   * The bathymetry texture fades into deepColor along an ellipse inscribed in
+   * its bounds: from this fraction of the radius to this one (1 = the edge).
+   */
+  edgeFade: [0.68, 0.97],
   skyZenith: '#5f86ad',
   skyHorizon: '#c9dbe8',
   foamColor: '#f2f5f2',
@@ -68,58 +84,13 @@ export const OCEAN_CONFIG = {
   },
 };
 
-/** Instanced 3D forest (src/three/vegetation.js). Distances in km. */
-export const VEGETATION_CONFIG = {
-  /** Trees appear only when the camera is closer than this to its target. */
-  showBelowDistanceKm: 175,
-  /** Planting radius around the focus = camera distance × this, capped. */
-  radiusPerDistance: 0.55,
-  maxRadiusKm: 40,
-  chunkSizeKm: 10,
-  chunksPerFrame: 2,
-  maxCachedChunks: 140,
-  /** Frame-time target for the density governor (s) and the lowest share of trees it may keep. */
-  targetFrameSeconds: 1 / 40,
-  minBudget: 0.3,
-  /** Jittered grid spacing between candidate trees (larger on low tier). */
-  spacingKm: 0.42,
-  /** Crown diameter per tree type (stylised map scale). */
-  crownKm: { broadleafA: 0.56, broadleafB: 0.5, montane: 0.36, palm: 0.4 },
-  heightScale: 0.85,
-  /** Trees above this true elevation (km) are often montane conifer-like crowns. */
-  montaneAboveKm: 1.3,
-  sinkKm: 0.05,
-  /** Depth chunks rise from when they appear. */
-  growKm: 0.7,
-  colors: {
-    broadleaf: ['#2d5729', '#38662f', '#467634', '#294c27', '#527d38', '#3f6a2c'],
-    montane: ['#2a4630', '#33553a', '#3c5f3c'],
-    palm: ['#6a8e3c', '#5b8034', '#78993f'],
-  },
-};
-
-/** Bird flocks over the forest (src/three/birds.js). Distances in km. */
-export const BIRD_CONFIG = {
-  /** Birds appear only when the camera is closer than this to its target. */
-  showBelowDistanceKm: 175,
-  flocks: 6,
-  minFlockSize: 5,
-  maxFlockSize: 11,
-  /** Stylised wingspan so birds read from the camera height. */
-  wingspanKm: 0.85,
-  spacingKm: 1.0,
-  /** Range of the looping flight paths around the destination. */
-  pathRadiusKm: [5, 16],
-  speedKmPerSecond: 0.6,
-  /** Height above the terrain: well above the canopy, so shadows fall visibly offset. */
-  clearanceKm: [5, 9],
-  flapSpeed: 7,
-  /** Share of flocks that are white egrets (the rest are dark silhouettes). */
-  whiteShare: 0.65,
-  whiteColor: '#f3f1ea',
-  darkColor: '#4a3e31',
-  /** Flocks fade out and regroup when the focus moves further than this. */
-  regroupDistanceKm: 25,
+/** Full-screen cloud fly-through during the intro zoom only (src/three/cloud-veil.js). */
+export const CLOUD_VEIL_CONFIG = {
+  /** Window of the hero → overview scroll in which the camera passes through cloud. */
+  introStart: 0.12,
+  introEnd: 0.82,
+  litColor: '#f7f8f6',
+  shadeColor: '#aebccb',
 };
 
 /** Drifting cloud layer and cloud shadows (src/three/clouds.js). */
@@ -129,8 +100,11 @@ export const CLOUD_CONFIG = {
   /** Size of the largest cloud features (km). */
   scaleKm: 38,
   /** 0 clear sky … 1 overcast. */
-  coverage: 0.42,
+  coverage: 0.3,
   windKmPerSecond: [0.32, -0.14],
+  /** Drift is scaled by cameraDistance / driftReferenceKm (capped) so clouds glide visibly from afar. */
+  driftReferenceKm: 100,
+  maxDriftScale: 11,
   opacity: 0.9,
   shadowStrength: 0.55,
   litColor: '#ffffff',
@@ -166,10 +140,19 @@ export const CAMERA_CONFIG = {
   fov: 32,
   near: 0.5,
   far: 8000,
+  /**
+   * Depth precision: the near plane follows the camera distance (×nearRatio)
+   * and the far plane (×farRatio). With a fixed 0.5 km near plane, the
+   * 1,000 km hero view could only separate surfaces ~0.2 km apart, so the
+   * low coast z-fought with the sea and flickered. The nearest geometry is
+   * always more than half the camera distance away, so 0.1 is safe.
+   */
+  nearRatio: 0.1,
+  farRatio: 9,
   /** Island overview: whole country, gently tilted. */
   overview: { tilt: 34, azimuth: 0, fill: 0.7 },
   /** Hero: smaller, floating model with a slow idle rotation. */
-  hero: { tilt: 28, azimuth: -22, fill: 0.62, idleYawDegrees: 9, idlePeriodSeconds: 48 },
+  hero: { tilt: 28, azimuth: -22, fill: 0.48, idleYawDegrees: 9, idlePeriodSeconds: 48 },
   /** Seconds for a destination-to-destination flight. */
   flightDuration: 2.1,
   /** How much the camera rises (relative to its distance) mid-flight per 100 km travelled. */

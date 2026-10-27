@@ -66,7 +66,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunDirection;
   uniform vec3 uFoamColor;
   uniform float uTime;
-  uniform float uEdgeFade;
+  uniform vec2 uEdgeFade;       // ellipse radii (0–1) where the baked colours start / finish fading
   // xy = direction, z = wavenumber k (rad/km), w = slope amplitude (A·k)
   uniform vec4 uWaves[WAVE_COUNT];
   uniform float uWaveSpeed[WAVE_COUNT];   // angular frequency ω (rad/s, time-scaled)
@@ -158,8 +158,11 @@ const fragmentShader = /* glsl */ `
     vec2 span = uBounds.zw - uBounds.xy;
     vec2 uv = vec2((p.x - uBounds.x) / span.x, 1.0 - (p.y - uBounds.y) / span.y);
     vec3 baked = texture2D(uMap, clamp(uv, 0.0, 1.0)).rgb;
-    float edgeDistance = min(min(p.x - uBounds.x, uBounds.z - p.x), min(p.y - uBounds.y, uBounds.w - p.y));
-    vec3 water = mix(uDeep, baked, smoothstep(0.0, uEdgeFade, edgeDistance));
+    // Elliptical fade into the open-ocean colour: a rectangular fade still
+    // showed the texture's square outline (and a straight-cut India) from afar.
+    vec2 centre = (uBounds.xy + uBounds.zw) * 0.5;
+    float ellipse = length((p - centre) / (span * 0.5));
+    vec3 water = mix(baked, uDeep, smoothstep(uEdgeFade.x, uEdgeFade.y, ellipse));
 
     // ---- Wave field --------------------------------------------------------
     // Kilometres covered by one pixel: decides which waves can be resolved.
@@ -323,7 +326,7 @@ export function createOcean({ texture, bounds, shoreTexture, shoreBounds, shoreM
       uSunDirection: { value: new Vector3().copy(sunDirection) },
       uFoamColor: { value: new Color(OCEAN_CONFIG.foamColor) },
       uTime: { value: 0 },
-      uEdgeFade: { value: OCEAN_CONFIG.edgeFadeKm },
+      uEdgeFade: { value: new Vector2(...OCEAN_CONFIG.edgeFade) },
       uWaves: { value: spectrum.waves },
       uWaveSpeed: { value: spectrum.speeds },
       uWind: { value: new Vector2() },

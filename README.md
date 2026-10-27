@@ -41,6 +41,7 @@ root instead (own server, Netlify, a custom domain), build without
 | ----------------------- | ------------------------------------------------------------------------------- |
 | `npm run geo:fetch`     | Downloads the coastline and elevation tiles into `.geo-cache/raw` (~15 MB).     |
 | `npm run geo:build`     | Rebuilds every terrain asset from the cache (≈ 1.5–3 min), then the shore field. |
+| `npm run geo:map-texture` | Registers an island image against the coastline and bakes `terrain-map.webp` (see "Surface texture"). |
 | `npm run geo:shore`     | Rebuilds only the distance-to-coast field used by the surf (≈ 5 s).             |
 | `npm run geo`           | Both of the above.                                                              |
 | `npm run assets:images` | Downloads the Commons photographs, converts them to WebP, writes credits.json. |
@@ -180,41 +181,53 @@ read through light, so the shader focuses on that:
   camera is too far to resolve single lines, surf becomes a soft white rim.
 * With reduced motion the sea is shown as a still frame.
 
-### Forest, clouds and rivers (aerial-map look)
+### Surface texture — `scripts/geo/build-map-texture.mjs`
 
-Inspired by hand-crafted aerial maps such as explore.ownprimland.com, the island
-is dressed with a living landscape:
+The land is coloured by `terrain-map.webp` (`TERRAIN_CONFIG.surfaceTexture`),
+generated from an island image such as a satellite mosaic. To change it:
 
-* **Instanced 3D forest** — `src/three/vegetation.js`. Tens of thousands of
-  low-poly tree crowns (two broadleaf shapes, montane trees in the hills,
-  coconut palms on the coast) are planted in 10 km chunks around the camera
-  focus whenever the camera is close to the island (destination views), and
-  rise out of the ground as they appear. Placement follows
-  `terrain-vegetation.webp`, baked with the terrain: dense wet-zone
-  rainforest, sparser dry zone with paddy-field clearings, tea estates with
-  forest patches in the hill country, open patana grassland on the plateaux,
-  none on beaches or rivers, and clearings around each destination landmark.
-  This map is **art-directed from the same climate zoning as the albedo, not
-  land-cover data.** Each chunk's trees are shuffled so drawing a prefix thins
-  the forest evenly: density falls off towards the edge of view, and a
-  frame-time governor thins it on slower GPUs (enlarging the remaining crowns
-  so the canopy stays closed) and restores it when there is headroom.
-* **Close-range shadows** — the sun's shadow map follows the camera focus
-  and tightens as you zoom in, so individual crowns cast shadows.
+1. Put the new image in `source-assets/textures/` (git-ignored; large source
+   images must stay out of `/public`, which is published and committed). It
+   must be **north-up with a transparent sea** — only the land opaque. No
+   georeferencing is needed.
+2. Run `npm run geo:map-texture -- source-assets/textures/<file>.png`
+   (optional second argument: output height in pixels, default 4096).
+
+The script compares the image's opaque area with the coastline polygon, tries
+plain longitude/latitude and Web Mercator layouts, and tunes the four image
+edges to maximise the overlap (the current image fits at 99.1 % IoU). It then
+resamples the image onto the terrain texture grid and pads colour outwards
+across the coastline so no seams show. The fit and source are recorded in
+`terrain.json` (`textures.map`).
+
+Set `surfaceTexture: 'terrain-albedo.webp'` to return to the procedural,
+elevation-painted colours. `riverOverlay` draws the DEM-derived rivers as
+glossy water; it is off for photographic textures, which already show the real
+rivers.
+
+### Clouds and rivers
+
+* **Camera-following shadows** — the sun's shadow map follows the camera
+  focus and tightens as you zoom in, so landmarks and relief get crisp
+  shadows at destination views.
 * **Clouds** — `src/three/clouds.js`. One procedural density field drives a
-  drifting cloud layer above the peaks *and* cloud shadows on the terrain,
-  trees and ocean (each surface point looks up along the sun direction). The
-  focused destination is kept clear.
-* **Rivers** — the vegetation map's river channel turns DEM-derived rivers
-  into dark, glossy water that reflects the sky.
-* **Birds** — `src/three/birds.js`. Flocks of white egrets and darker birds
-  (one instanced mesh) fly loose formations along looping paths around the
-  focused destination, holding a clearance above the real terrain and banking
-  into turns. Wings flap in the vertex shader, alternating flapping and
-  gliding per bird; the shadow-depth material uses the same deformation, so
-  their shadows on the canopy flap too. Wingspans are stylised (~0.85 km) to
-  read from the camera height. Shown only in close views, regrouped at each
-  new destination, and omitted for reduced motion.
+  drifting cloud layer above the peaks *and* cloud shadows on the terrain
+  and ocean (each surface point looks up along the sun direction). The
+  focused destination is kept clear. Drift speed scales with the camera
+  distance, so clouds glide visibly in the wide opening view and stay gentle
+  up close.
+* **Flying through the clouds** — `src/three/cloud-veil.js`. The initial
+  zoom (scrolling from the opening view to the island overview) passes
+  through cloud: a full-screen layer of three procedural cloud sheets streams
+  outward with parallax, thickens to a white-out and parts from the centre to
+  reveal the island. It is scrubbed by the same scroll as the camera, so
+  scrolling back up to the top zooms out through the clouds again. Moving
+  between destinations has no cloud effect. Marker labels fade while inside
+  the cloud; the effect is disabled for reduced motion. Tune it with
+  `CLOUD_VEIL_CONFIG`.
+* **Rivers** — the river channel of `terrain-vegetation.webp` (baked with the
+  terrain) turns DEM-derived rivers into dark, glossy water that reflects the
+  sky.
 
 ### Height sampling — `src/terrain/terrain-sampling.js`
 
@@ -319,13 +332,9 @@ disables the toggle if the file cannot load.
 
 ### Look and feel
 
-* Birds — `BIRD_CONFIG` (number and size of flocks, wingspan, flight radius,
-  speed, altitude, flap speed, egret share and colours).
-* Forest and clouds — `VEGETATION_CONFIG` (density spacing, crown sizes,
-  colours, planting radius, frame-time target) and `CLOUD_CONFIG` (coverage,
-  altitude, scale, wind, shadow strength) in `src/data/scene-config.js`. The
-  forest layout itself comes from `terrain-vegetation.webp`
-  (`bakeVegetation` in `scripts/geo/build-terrain.mjs`; re-run `npm run geo:build`).
+* Clouds — `CLOUD_CONFIG` (coverage, altitude, scale, wind, drift scaling,
+  shadow strength) and `CLOUD_VEIL_CONFIG` (when the fly-through happens in
+  the intro scroll, colours) in `src/data/scene-config.js`.
 * Scene tunables — `src/data/scene-config.js`: coast lift, ocean colours,
   wind direction, wavelengths, steepness and speed (`OCEAN_CONFIG.waves`),
   the FFT simulation — cascade sizes, peak wavelength, roughness, foam —

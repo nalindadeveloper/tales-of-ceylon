@@ -13,7 +13,8 @@
     "geo": "npm run geo:fetch && npm run geo:build",
     "assets:audio": "node scripts/assets/generate-ambient-audio.mjs",
     "assets:images": "node scripts/assets/fetch-images.mjs",
-    "geo:shore": "node scripts/geo/build-shore-field.mjs"
+    "geo:shore": "node scripts/geo/build-shore-field.mjs",
+    "geo:map-texture": "node --max-old-space-size=4096 scripts/geo/build-map-texture.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

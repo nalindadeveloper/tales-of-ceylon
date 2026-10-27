@@ -21,8 +21,7 @@ import { createMapMarkers } from './map-markers.js';
 import { createModelLoader } from './model-loader.js';
 import { createOcean } from './ocean.js';
 import { createClouds } from './clouds.js';
-import { createVegetation } from './vegetation.js';
-import { createBirds } from './birds.js';
+import { createCloudVeil } from './cloud-veil.js';
 import { createOceanSimulation, isFFTOceanSupported } from './ocean-simulation.js';
 import { createRenderer } from './renderer.js';
 import { createScene } from './scene.js';
@@ -48,7 +47,7 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   const loader = createEssentialLoader({ onProgress });
   const [boundary, elevation] = await Promise.all([
     loadBoundary(loader, resolveUrl(TERRAIN_CONFIG.boundaryUrl)),
-    loadElevationData(loader, resolveUrl(TERRAIN_CONFIG.basePath), { maxAnisotropy }).then((data) => {
+    loadElevationData(loader, resolveUrl(TERRAIN_CONFIG.basePath), { maxAnisotropy, surfaceTexture: TERRAIN_CONFIG.surfaceTexture }).then((data) => {
       onStage?.('Raising the highlands');
       return data;
     }),
@@ -86,6 +85,8 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
 
   const clouds = createClouds({ center: { x: boundary.bounds.centerX, z: boundary.bounds.centerZ }, sunDirection: lighting.direction });
   scene.add(clouds.mesh);
+  const cloudVeil = createCloudVeil();
+  scene.add(cloudVeil.mesh);
 
   const sampler = createTerrainSampler(elevation.mesh, TERRAIN_CONFIG);
   const placements = computeDestinationPlacements(destinations, sampler);
@@ -102,22 +103,6 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   const modelLoader = createModelLoader();
   const objects = createDestinationObjects({ placements, modelLoader, shadows: quality.shadows, reducedMotion });
   scene.add(objects.group);
-
-  // Instanced forest around the camera focus (needs the vegetation map).
-  const vegetation = elevation.textures.vegetation
-    ? createVegetation({
-        vegetationTexture: elevation.textures.vegetation,
-        textureBounds: elevation.meta.textures.bounds,
-        sampler,
-        qualityTier,
-        shadows: quality.shadows,
-      })
-    : null;
-  if (vegetation) scene.add(vegetation.group);
-
-  // Flocks over the forest; left out entirely for reduced motion.
-  const birds = reducedMotion ? null : createBirds({ sampler, qualityTier, shadows: quality.shadows });
-  if (birds) scene.add(birds.mesh);
 
   const director = createCameraDirector({ rig, islandBounds: boundary.bounds, reducedMotion });
 
@@ -163,10 +148,12 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
     updateFog(focusDistance);
     ocean.update(elapsed, delta);
     lighting.update(rig.target, focusDistance);
-    clouds.update(reducedMotion ? 0 : elapsed, rig.target, focusDistance);
-    vegetation?.update(rig.target, focusDistance, delta);
-    birds?.update(elapsed, delta, rig.target, focusDistance);
-    markers.setVisibility(Math.min(1, Math.max(0, (director.getIntroProgress() - 0.55) / 0.35)));
+    clouds.update(reducedMotion ? 0 : elapsed, reducedMotion ? 0 : delta, rig.target, focusDistance);
+    const veil = director.getVeil();
+    cloudVeil.update(veil, elapsed, viewport.width / viewport.height);
+    // Labels fade while the camera is inside the clouds.
+    const introVisibility = Math.min(1, Math.max(0, (director.getIntroProgress() - 0.55) / 0.35));
+    markers.setVisibility(introVisibility * (1 - Math.min(1, veil.amount * 1.4)));
     markers.update(rig.camera, elapsed, delta, viewport);
     objects.update(elapsed, delta);
     renderer.render(scene, rig.camera);
@@ -183,7 +170,7 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
   });
 
   // Development-only handle for inspecting the scene from the console.
-  if (import.meta.env.DEV) window.__island = { scene, rig, placements, sampler, simulation, vegetation, birds };
+  if (import.meta.env.DEV) window.__island = { scene, rig, placements, sampler, simulation };
 
   // First frame without damping, then start the loop.
   director.snap();
@@ -217,9 +204,8 @@ export async function createIslandWorld({ canvas, labelContainer, destinations, 
       director.dispose();
       markers.dispose();
       objects.dispose();
-      vegetation?.dispose();
-      birds?.dispose();
       clouds.dispose();
+      cloudVeil.dispose();
       modelLoader.dispose();
       disposeObject3D(terrain.group);
       ocean.dispose();

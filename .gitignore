@@ -4,3 +4,4 @@ dist
 *.log
 .asset-cache
 .claude
+source-assets

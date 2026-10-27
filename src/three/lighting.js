@@ -39,7 +39,7 @@ export function createLighting({ bounds, shadows }) {
   let shadowRadius = islandRadius;
   /**
    * Keeps the shadow map focused on what the camera sees: at a destination it
-   * shrinks to a few tens of kilometres so individual trees cast shadows; in
+   * shrinks to a few tens of kilometres so landmarks and relief get crisp shadows; in
    * the overview it covers the whole island.
    */
   function update(focus, cameraDistance) {

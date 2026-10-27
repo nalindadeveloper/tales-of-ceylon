@@ -22,6 +22,14 @@ export function initPageAnimations({ reducedMotion }) {
   });
   triggers.push(heroFade.scrollTrigger);
 
+  // The legibility gradient fades early, before the camera enters the clouds.
+  const shadeFade = gsap.to('.hero', {
+    '--hero-shade': 0,
+    ease: 'none',
+    scrollTrigger: { trigger: '.hero', start: 'top top', end: '30% top', scrub: true },
+  });
+  triggers.push(shadeFade.scrollTrigger);
+
   // Island intro panel: the overlay title fades in as the section pins.
   const batch = ScrollTrigger.batch('[data-reveal]', {
     start: 'top 85%',
